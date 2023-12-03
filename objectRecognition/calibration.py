@@ -27,6 +27,7 @@ def calibrate_camera(calibration_dir, chessboard_size):
     return mtx, dist
 
 def undistort_image(image, camera_matrix, dist_coeffs):
+
     return cv2.undistort(image, camera_matrix, dist_coeffs, None, camera_matrix)
 
 def detect_aruco_markers(image_path, camera_matrix, dist_coeffs):
@@ -35,6 +36,10 @@ def detect_aruco_markers(image_path, camera_matrix, dist_coeffs):
 
     # Undistort the image
     undistorted_image = undistort_image(image, camera_matrix, dist_coeffs)
+    cv2.imshow("Undistorted Image", undistorted_image)
+    cv2.waitKey(0)
+    
+
 
     # Convert the image to grayscale
     gray = cv2.cvtColor(undistorted_image, cv2.COLOR_BGR2GRAY)
@@ -71,7 +76,7 @@ if __name__ == "__main__":
     calibration_images = [os.path.join(calibration_dir, file_name) for file_name in os.listdir(calibration_dir) if file_name.endswith(".jpg")]
 
     # Chessboard size (number of inner corners)
-    chessboard_size = (7, 7)
+    chessboard_size = (7,7)
     
     # Calibrate the camera and obtain camera matrix and distortion coefficients
     camera_matrix, dist_coeffs = calibrate_camera(calibration_dir, chessboard_size)
