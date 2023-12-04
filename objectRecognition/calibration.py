@@ -111,7 +111,7 @@ def generate_top_down_view(image, extremeCorners):
 
 
 
-def calibration():
+def initialCalibration():
     
     script_dir = os.path.dirname(os.path.abspath(__file__))
     calibration_dir = os.path.join(script_dir, 'chess')
@@ -159,4 +159,4 @@ def calibration():
     return camera_matrix, dist_coeffs, finalCorners
 
 if __name__ == "__main__":
-    calibration()
+    initialCalibration()
