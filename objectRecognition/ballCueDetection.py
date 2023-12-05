@@ -1,6 +1,10 @@
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+import calibration as cc
+import os
+
+
 
 
 height, width = 280, 560 # size of output image (few functions use it)
@@ -211,44 +215,6 @@ gets image (of snooker table), applies several methods to detect the balls and r
 
 * output: 
         image, black image with large colored circle for each contour
-'''
-def find_ctrs_color(ctrs, input_img):
-
-    K = np.ones((3,3),np.uint8) # filter
-    output = input_img.copy() #np.zeros(input_img.shape,np.uint8) # empty img
-    gray = cv2.cvtColor(input_img, cv2.COLOR_BGR2GRAY) # gray version
-    mask = np.zeros(gray.shape,np.uint8) # empty mask
-
-    for i in range(len(ctrs)): # for all contours
-        
-        # find center of contour
-        M = cv2.moments(ctrs[i])
-        cX = int(M['m10']/M['m00']) # X pos of contour center
-        cY = int(M['m01']/M['m00']) # Y pos
-    
-        mask[...]=0 # reset the mask for every ball 
-    
-        cv2.drawContours(mask,ctrs,i,255,-1) # draws the mask of current contour (every ball is getting masked each iteration)
-
-        mask =  cv2.erode(mask,K,iterations=3) # erode mask to filter green color around the balls contours
-        
-        output = cv2.circle(output, # img to draw on
-                         (cX,cY), # position on img
-                         20, # radius of circle - size of drawn snooker ball
-                         cv2.mean(input_img,mask), # color mean of each contour-color of each ball (src_img=transformed img)
-                         -1) # -1 to fill ball with color
-    return output
-
-'''
-gets image (of snooker table), applies several methods to detect the balls and returns 2D top view with drawn, colored balls
-
-
-* input:
-        ctrs: contours
-        input_img: image that the contours are taken from
-
-* output: 
-        image, black image with large colored circle for each contour
 
 '''
 #This function is redundant use draw balls instead
@@ -280,28 +246,18 @@ def find_ctrs_color(ctrs, input_img):
     return output
 
 if __name__ == "__main__":
+    camera_matrix, dist_coeffs, finalCorners = cc.initialCalibration()
+    targetCorners = np.float32([ [0,0],[width,0],[0,height],[width,height] ]) # 4 corners points of OUTPUT image
+    #name = 'P6_Snooker.mp4' #Test video
 
-    name = 'P6_Snooker.mp4' #Test video
+    #Test image flatten based on calibration data
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    image_path = os.path.join(script_dir, 'poolTable.jpg')
+    image = cv2.imread(image_path)
+    image = cv2.undistort(image, camera_matrix, dist_coeffs)
+    
+    M = cv2.getPerspectiveTransform(finalCorners,targetCorners)
+    image_warped = cv2.warpPerspective(image, M, (width, height))
 
-    # first frame from the original video
-    cap = cv2.VideoCapture(name)
-    ret, frame = cap.read()
-    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB) # take first frame
+    find_balls(image_warped)
 
-    # loop frames and take few different frames for later
-    for i in range(1430):
-        ret, frame2 = cap.read() # frame2 = the 1430th frame (frame example #1)
-        if i == 1050:
-            frame3 = frame2.copy() # frame3 = the 1000th frame (frame example #2)
-        if i == 263:
-            frame4 = frame2.copy() # frame4 = the 263th frame (frame example #3)
-            
-    frame2 = cv2.cvtColor(frame2, cv2.COLOR_BGR2RGB) 
-    frame3 = cv2.cvtColor(frame3, cv2.COLOR_BGR2RGB) 
-    frame4 = cv2.cvtColor(frame4, cv2.COLOR_BGR2RGB) # another frames
-
-    plt.figure(figsize=(16,8))
-    plt.imshow(frame)
-    plt.title('first frame')
-    plt.axis('off')
-    plt.show()
