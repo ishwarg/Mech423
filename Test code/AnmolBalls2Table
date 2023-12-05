@@ -3,7 +3,7 @@ import cv2 as cv
 import sys
 import os
 from matplotlib import pyplot as plt
-import calibration as cc
+#import calibration as cc
 
 """
 This code places pictures of pool balls on top of a pool table
@@ -20,8 +20,9 @@ assert imgPoolTable is not None, "file could not be loaded"
 assert imgPoolBalls is not None, "file could not be loaded"
 
 #define region of interest (ROI) at top left corner of pool table size of pool balls img
-rows,cols,channels = imgPoolBalls.shape
-roi = imgPoolTable[0:rows,0:cols]
+#width,height,channels = imgPoolBalls.shape
+imgPoolBalls = cv.resize(imgPoolBalls, (300,300))
+width,height,channels = imgPoolBalls.shape
 
 #Create mask of image
 imgPoolBallsHSV = cv.cvtColor(imgPoolBalls,cv.COLOR_BGR2HSV)
@@ -36,13 +37,40 @@ mask = cv.bitwise_not(mask_inv)
 imgPoolBalls_fg = cv.bitwise_and(imgPoolBalls,imgPoolBalls,mask = mask)
 
 # Get Each individual ball
+z = 0
+ball = [None]*16
 
-# Now black-out the area of logo in ROI
-imgPoolTable_bg = cv.bitwise_and(roi,roi,mask = mask_inv)
+for x in range(4):
+    startRow = int(height*x/4)
+    endRow = int(height*(x+1)/4)
+    for y in range(4):
+        startCol = int(width*y/4)
+        endCol = int(width*(y+1)/4)
+        print(z)
+        ball[z] = imgPoolBalls_fg[startRow:endRow,startCol:endCol]
+        z+=1
+        
+
+mask = mask[0:int(height/4),0:int(width/4)]
+mask_inv = cv.bitwise_not(mask)
+
+# Generate place balls randomly on the pool table
+for singleBall in ball[0:4]:
+    randX = np.random.randint(0, imgPoolTable.shape[0] - singleBall.shape[0])
+    randY = np.random.randint(0, imgPoolTable.shape[1] - singleBall.shape[1])
+
+    roi = imgPoolTable[randX:randX + singleBall.shape[0],randY:randY + singleBall.shape[1]]
+    cv.imshow('res',mask_inv)
+    cv.imshow('res',singleBall)
+    img_bg = cv.bitwise_and(roi,roi,mask = mask_inv)
+    dst = cv.add(img_bg,singleBall)
+
+    imgPoolTable[randX:randX + singleBall.shape[0],randY:randY + singleBall.shape[1]] = dst
+
 
 #Display an image
-dst = cv.add(imgPoolTable_bg,imgPoolBalls_fg)
-imgPoolTable[0:rows, 0:cols ] = dst
 cv.imshow('res',imgPoolTable)
 cv.waitKey(0)
 cv.destroyAllWindows()
+
+cv.imwrite("PoolTableWithBalls3.jpg", imgPoolTable)
