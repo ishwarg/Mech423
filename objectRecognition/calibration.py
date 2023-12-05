@@ -40,10 +40,14 @@ def detect_aruco_markers(image_path, camera_matrix, dist_coeffs):
     aruco_dict = aruco.getPredefinedDictionary(aruco.DICT_6X6_250)
 
     # Initialize the ArUco detector parameters
-    parameters = aruco.DetectorParameters_create()
+    parameters = aruco.DetectorParameters()
+
+    # Instantiat an ArucoDetector object
+    detector = cv2.aruco.ArucoDetector(aruco_dict, parameters)
 
     # Detect ArUco markers
-    corners, ids, rejected = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
+    corners, ids, rejected = detector.detectMarkers(gray)
+
 
     # Draw detected markers on the undistorted image
     image_markers = undistorted_image.copy()

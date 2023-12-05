@@ -21,25 +21,24 @@ assert imgPoolBalls is not None, "file could not be loaded"
 
 #define region of interest (ROI) at top left corner of pool table size of pool balls img
 rows,cols,channels = imgPoolBalls.shape
-imgPoolBalls = cv.resize(imgPoolBalls, (200,200))
-rows,cols,channels = imgPoolBalls.shape
 roi = imgPoolTable[0:rows,0:cols]
 
 #Create mask of image
-imgPoolBallsBlue = imgPoolBalls[:,:,0]
-imgPoolBallsGreen = imgPoolBalls[:,:,1]
-imgPoolBallsRed = imgPoolBalls[:,:,2]
 imgPoolBallsHSV = cv.cvtColor(imgPoolBalls,cv.COLOR_BGR2HSV)
+
 # Define the range of green in HSV
 lower_green = np.array([57, 190, 136])
 upper_green = np.array([63, 196, 142])
 mask_inv = cv.inRange(imgPoolBallsHSV, lower_green, upper_green)
 mask = cv.bitwise_not(mask_inv)
 
-# Now black-out the area of logo in ROI
-imgPoolTable_bg = cv.bitwise_and(roi,roi,mask = mask_inv)
 # Take only region of logo from logo image.
 imgPoolBalls_fg = cv.bitwise_and(imgPoolBalls,imgPoolBalls,mask = mask)
+
+# Get Each individual ball
+
+# Now black-out the area of logo in ROI
+imgPoolTable_bg = cv.bitwise_and(roi,roi,mask = mask_inv)
 
 #Display an image
 dst = cv.add(imgPoolTable_bg,imgPoolBalls_fg)
