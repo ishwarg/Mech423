@@ -158,6 +158,46 @@ def filter_ctrs(ctrs, min_s = 90, max_s = 358, alpha = 3.445):
         
     return filtered_ctrs # returns filtere contours
 
+# This function determines the x-y coords of all the balls
+# This function also filters contours
+# input: contours, mminimum and maximum radii
+# Output: x-y coordinates of each ball
+def FindBalls(ctrs, min_r = 25, max_r = 50):
+
+    l = [] # list for filtered contours
+    
+    for c in ctrs: # for all contours
+        
+        M = cv2.moments(c)
+
+        # If area smaller than a threshold filter it out
+        if M["m00"]<np.pi*min_r**2:
+            continue
+
+        # If contour has straight lines filter it out
+        lX=[x for [[x, _]] in c]
+        lY=[y for [[_, y]] in c]
+        
+        if np.corrcoef(lX, lY)[0, 1]**2 > 0.75:
+            [vx,vy,x,y] = cv2.fitLine(c, cv2.DIST_L2, 0, 0.01, 0.01)
+            cv2.line(
+                newframe,
+                tuple(map(int, (x+vx*-1920, y+vy*-1920))),
+                tuple(map(int, (x+vx*1920, y+vy*1920))),
+                (255, 255, 255),
+                15
+            )
+            continue
+
+        # If contour is circular include it in final list
+        x = int(M["m10"] / M["m00"])
+        y = int(M["m01"] / M["m00"])
+        stdRadius = np.std([((x-ix)**2 + (y-iy)**2)**0.5 for ix, iy in zip(lX, lY)])
+
+        if stdRadius < 10:
+           l+=[(x, y)]
+
+    return l
 '''
 gets a frame (of snooker table), applies several methods to detect the balls and returns 2D top view with drawn, colored balls
 
