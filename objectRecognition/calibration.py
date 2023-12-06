@@ -4,6 +4,9 @@ from cv2 import aruco
 import numpy as np
 from itertools import combinations
 
+maxWidth = 2000
+maxHeight = 1000
+
 
 def calibrate_camera(calibration_dir, chessboard_size):
     obj_points = []
@@ -36,7 +39,6 @@ def detect_aruco_markers(image_path, camera_matrix, dist_coeffs):
     # Convert the image to grayscale
     gray = cv2.cvtColor(undistorted_image, cv2.COLOR_BGR2GRAY)
 
-    # Define the ArUco dictionary
     aruco_dict = aruco.getPredefinedDictionary(aruco.DICT_6X6_250)
 
     # Initialize the ArUco detector parameters
@@ -48,10 +50,18 @@ def detect_aruco_markers(image_path, camera_matrix, dist_coeffs):
     # Detect ArUco markers
     corners, ids, rejected = detector.detectMarkers(gray)
 
+    # Filter markers with IDs 0 to 3
+    valid_ids = [0, 1, 2, 3]
+    valid_corners = [corner for corner, marker_id in zip(corners, ids) if marker_id[0] in valid_ids]
+    valid_ids = [marker_id[0] for marker_id in ids if marker_id[0] in valid_ids]
+    valid_ids = np.array(valid_ids)
 
     # Draw detected markers on the undistorted image
     image_markers = undistorted_image.copy()
-    aruco.drawDetectedMarkers(image_markers, corners, ids)
+    aruco.drawDetectedMarkers(image_markers, valid_corners, valid_ids)
+
+    # Return the detected markers' information
+    return valid_corners, valid_ids, image_markers
 
     
     
@@ -61,7 +71,7 @@ def detect_aruco_markers(image_path, camera_matrix, dist_coeffs):
     return corners, ids, image_markers
 
 
-def generate_top_down_view(image, extremeCorners):
+def generate_top_down_view(image, extremeCorners, maxWidth, maxHeight):
     
     
   
@@ -70,7 +80,6 @@ def generate_top_down_view(image, extremeCorners):
     
 
     
-    maxWidth, maxHeight = (560, 280)
 
     dst = np.array([
 		[0, 0],
@@ -90,6 +99,7 @@ def generate_top_down_view(image, extremeCorners):
     cv2.imshow('Top-Down View', warped)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
+    return warped
 
 
 
@@ -99,7 +109,7 @@ def initialCalibration():
     
     script_dir = os.path.dirname(os.path.abspath(__file__))
     calibration_dir = os.path.join(script_dir, 'chess')
-    image_path = os.path.join(script_dir, 'IMG_0096.jpg')
+    image_path = os.path.join(script_dir, 'IMG_0101.jpg')
 
     # Create a list of file paths in the calibration directory
    
@@ -110,8 +120,10 @@ def initialCalibration():
     camera_matrix, dist_coeffs = calibrate_camera(calibration_dir, chessboard_size)
 
     corners, ids, markersDetectedImage = detect_aruco_markers(image_path, camera_matrix, dist_coeffs)
+    
 
-    finalCorners = [()]*4
+    finalCorners = [(None)]*4
+
     if ids is not None and len(ids) == 4:
         print("Detected 4 ArUco markers:")
         for i in range(4):
@@ -132,11 +144,11 @@ def initialCalibration():
         print("Could not detect 4 ArUco markers in the image.")
     
     
-    print(finalCorners)
+    # print(finalCorners)
     
-    generate_top_down_view(markersDetectedImage, finalCorners)
+    warped = generate_top_down_view(markersDetectedImage, finalCorners, maxWidth, maxHeight)
 
-    return camera_matrix, dist_coeffs, finalCorners
+    return camera_matrix, dist_coeffs, finalCorners, warped
 
 if __name__ == "__main__":
     initialCalibration()
