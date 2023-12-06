@@ -8,7 +8,7 @@ import os
 WHITE_THRESHOLD = 10    #Threshold for the whit part of the ball
 PERCENT_WHITE_THRESHOLD = 0.5   #Threshold for what percentage of the ball is white before it is considered a stiped ball
 MINIMUM_RADIUS = 25     #Minimum pool ball radius to expect in the image
-MAXIMUM_RADIUS = 30     #Max pool ball radius to expect in the image
+MAXIMUM_RADIUS = 60     #Max pool ball radius to expect in the image
 COLOUR_THRESHOLDS = {
     'YELLOW_UPPER':[0, 100, 100],
     'YELLOW_LOWER':[0, 100, 100],
@@ -37,14 +37,16 @@ BACKGROUND_THRESHOLD = {
 def FindBalls(ctrs, img):
 
     balls = [] # Dictionary for filtered contours
-    img_hsv = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)   #convert color for color identification
-
     for i,c in enumerate(ctrs): # for all contours
         
         M = cv2.moments(c)
 
         # If area smaller than a threshold filter it out
         if M["m00"]<np.pi*MINIMUM_RADIUS**2:
+            continue
+
+        # If area larger than a threshold filter it out
+        if M["m00"]>np.pi*MAXIMUM_RADIUS**2:
             continue
 
         # If contour has straight lines filter it out
@@ -71,8 +73,13 @@ def FindBalls(ctrs, img):
            # Sort the ball
 
            #Get img of specific ball
-           #ballImg = GenerateBallImg(c,img_hsv)
+           ballImg = GenerateBallImg(c,img)
+           cv2.imshow('res',ballImg)
+           cv2.waitKey(0)
+
            #Check Colour against thresholds
+           ballImg = cv2.cvtColor(ballImg,cv2.COLOR_BGR2HSV)   #convert color for color identification
+           ballImg_avgColor = cv2.mean(ballImg)
            #if CheckStrips(ballImg):
            #Sort balls
 
@@ -96,6 +103,7 @@ def GenerateContours(img):
     kernel = np.ones((5,5),np.uint8)
     mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel) # dilate->erode
     
+    
     # apply threshold
     ret,mask_inv = cv2.threshold(mask,5,255,cv2.THRESH_BINARY_INV) # apply threshold
 
@@ -108,9 +116,12 @@ def GenerateContours(img):
 #Input: single contour and image of playfield
 #Output: Cropped image of ball
 def GenerateBallImg(c,img):
+    img_gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
 
-    mask = np.zeros_like(img)
-    cv2.drawContours(mask,[c],255,-1)
+    mask = np.zeros_like(img_gray)
+    
+    cv2.drawContours(mask,[c],0,255,-1)
+
     ballImg = cv2.bitwise_and(img,img,mask = mask)
 
     return ballImg
@@ -137,7 +148,6 @@ if __name__ == "__main__":
     assert img is not None, "file could not be loaded"
 
     ctrs = GenerateContours(img)
-    cv2.drawContours(img,ctrs,0,(255,100,0),2)
 
     balls = FindBalls(ctrs, img)
 
@@ -159,6 +169,4 @@ if __name__ == "__main__":
         
     cv2.imshow('res',img)
     cv2.waitKey(0)
-
-    print(balls[1])
 
