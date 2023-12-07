@@ -3,12 +3,7 @@ import cv2
 from cv2 import aruco
 import numpy as np
 from itertools import combinations
-
-MAX_WIDTH = 2000
-MAX_HEIGHT = 1000
-TABLE_LENGTH = 3000
-TABLE_WIDTH = 1500
-RADIUS = 50
+import PoolTableConstants
 
 def getPositionMM(x,y):
     actualx = x*TABLE_LENGTH/MAX_WIDTH

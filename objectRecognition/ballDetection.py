@@ -3,13 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import calibration as cc
 import os
-
-# Constants
-WHITE_THRESHOLD = 10    #Threshold for the whit part of the ball
-PERCENT_WHITE_THRESHOLD = 0.5   #Threshold for what percentage of the ball is white before it is considered a stiped ball
-MINIMUM_RADIUS = 25     #Minimum pool ball radius to expect in the image
-MAXIMUM_RADIUS = 80     #Max pool ball radius to expect in the image
-IMGSIZE = [1120, 2240]
+import PoolTableConstants
 
 HUE_RANGES = [
     ("Red", (0, 15)),
