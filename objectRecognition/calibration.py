@@ -4,9 +4,16 @@ from cv2 import aruco
 import numpy as np
 from itertools import combinations
 
-maxWidth = 2000
-maxHeight = 1000
+MAX_WIDTH = 2000
+MAX_HEIGHT = 1000
+TABLE_LENGTH = 3000
+TABLE_WIDTH = 1500
+RADIUS = 50
 
+def getPositionMM(x,y):
+    actualx = x*TABLE_LENGTH/MAX_WIDTH
+    actualy = y*TABLE_WIDTH/MAX_HEIGHT
+    return actualx, actualy
 
 def calibrate_camera(calibration_dir, chessboard_size):
     obj_points = []
@@ -31,9 +38,9 @@ def calibrate_camera(calibration_dir, chessboard_size):
 
     return mtx, dist
 
-def detect_aruco_markers(image_path, camera_matrix, dist_coeffs):
-    # Load the image
-    image = cv2.imread(image_path)
+def detect_aruco_markers(image, camera_matrix, dist_coeffs):
+    
+    
     undistorted_image = cv2.undistort(image, camera_matrix, dist_coeffs)
 
     # Convert the image to grayscale
@@ -95,10 +102,10 @@ def generate_top_down_view(image, extremeCorners, maxWidth, maxHeight):
 
 
     # Visualization (Optional)
-    cv2.imshow('Original Image', image)
-    cv2.imshow('Top-Down View', warped)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    # cv2.imshow('Original Image', image)
+    # cv2.imshow('Top-Down View', warped)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
     return warped
 
 
@@ -110,6 +117,7 @@ def initialCalibration():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     calibration_dir = os.path.join(script_dir, 'chess')
     image_path = os.path.join(script_dir, 'IMG_0101.jpg')
+    image =cv2.imread(image_path)
 
     # Create a list of file paths in the calibration directory
    
@@ -119,7 +127,7 @@ def initialCalibration():
     # Calibrate the camera and obtain camera matrix and distortion coefficients
     camera_matrix, dist_coeffs = calibrate_camera(calibration_dir, chessboard_size)
 
-    corners, ids, markersDetectedImage = detect_aruco_markers(image_path, camera_matrix, dist_coeffs)
+    corners, ids, markersDetectedImage = detect_aruco_markers(image, camera_matrix, dist_coeffs)
     
 
     finalCorners = [(None)]*4
@@ -128,7 +136,7 @@ def initialCalibration():
         print("Detected 4 ArUco markers:")
         for i in range(4):
             
-            print(f"Marker ID {ids[i]} - Corners: {corners[i]}")
+            #print(f"Marker ID {ids[i]} - Corners: {corners[i]}")
             
             if ids[i]==0:
                 finalCorners[int(ids[i])]=tuple(corners[i][0][0])
@@ -147,9 +155,46 @@ def initialCalibration():
     # print(finalCorners)
     
     warped = generate_top_down_view(markersDetectedImage, finalCorners, maxWidth, maxHeight)
-    cv2.imwrite("PoolTableWithBallsWarped.jpg", warped)
 
     return camera_matrix, dist_coeffs, finalCorners, warped
+
+def tableDetection(image, camera_matrix, dist_coeffs):
+    corners, ids, markersDetectedImage = detect_aruco_markers(image, camera_matrix, dist_coeffs)
+    
+
+    finalCorners = [(None)]*4
+
+    if ids is not None and len(ids) == 4:
+        print("Detected 4 ArUco markers:")
+        for i in range(4):
+            
+            #print(f"Marker ID {ids[i]} - Corners: {corners[i]}")
+            
+            if ids[i]==0:
+                finalCorners[int(ids[i])]=tuple(corners[i][0][0])
+            elif ids[i] == 1:
+                finalCorners[int(ids[i])]=tuple(corners[i][0][3])
+            elif ids[i] == 2:
+                finalCorners[int(ids[i])]=tuple(corners[i][0][2])
+            elif ids[i] == 3:
+                
+                finalCorners[int(ids[i])]=tuple(corners[i][0][1])
+            
+    else:
+        print("Could not detect 4 ArUco markers in the image.")
+    
+    
+    # print(finalCorners)
+    
+    warped = generate_top_down_view(markersDetectedImage, finalCorners, maxWidth, maxHeight)
+    
+    cv2.imshow('Top-Down View', warped)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+    return finalCorners, warped
+
+
 
 if __name__ == "__main__":
     initialCalibration()
