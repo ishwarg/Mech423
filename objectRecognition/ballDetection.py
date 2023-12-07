@@ -10,6 +10,21 @@ PERCENT_WHITE_THRESHOLD = 0.5   #Threshold for what percentage of the ball is wh
 MINIMUM_RADIUS = 25     #Minimum pool ball radius to expect in the image
 MAXIMUM_RADIUS = 80     #Max pool ball radius to expect in the image
 IMGSIZE = [1120, 2240]
+
+HUE_RANGES = [
+    ("Red", (0, 15)),
+    ("Yellow", (15, 45)),
+    ("Green", (45, 75)),
+    ("Blue", (75, 105)),
+    ("Purple", (105, 135)),
+    ("Red", (135, 180)),  # Handle wrap-around at the red boundary
+]
+
+BACKGROUND_THRESHOLD = {
+    'UPPER': np.array([70, 255,240]),
+    'LOWER': np.array([45, 100,135])
+}
+'''
 COLOUR_THRESHOLDS = {
     'YELLOW_UPPER':[0, 100, 100],
     'YELLOW_LOWER':[0, 100, 100],
@@ -30,10 +45,7 @@ COLOUR_THRESHOLDS = {
     'CUE_UPPER':[0, 100, 100],
     'CUE_LOWER':[0, 100, 100],
 }
-BACKGROUND_THRESHOLD = {
-    'UPPER': np.array([70, 255,240]),
-    'LOWER': np.array([45, 100,135])
-}
+'''
 
 def FindBalls(ctrs, img):
 
@@ -81,6 +93,9 @@ def FindBalls(ctrs, img):
            #Check Colour against thresholds
            ballImg = cv2.cvtColor(ballImg,cv2.COLOR_BGR2HSV)   #convert color for color identification
            ballImg_avgColor = cv2.mean(ballImg)
+           #color_label = classify_hue(ballImg_avgColor[0],HUE_RANGES)
+           #balls[color_label] = [(x, y)]
+
            #if CheckStrips(ballImg):
            #Sort balls
 
@@ -139,6 +154,29 @@ def CheckStrips(ballImg):
     else:
         return False
 
+def DrawBalls(balls,img):
+    for i,(x,y) in enumerate(balls):
+        cv2.putText(img,
+            f'Ball id: {i}', (x+50, y-25),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (0, 0, 255),
+            1,
+            cv2.LINE_AA)
+        cv2.putText(img,
+            f'({x}, {y})', (x+50, y),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (0, 0, 255),
+            1,
+            cv2.LINE_AA)
+
+def classify_hue(hue_value, hue_ranges):
+    for label, (lower, upper) in hue_ranges:
+        if lower <= hue_value <= upper:
+            return label
+    return "Unknown"
+
 if __name__ == "__main__":
 
     #Load pool table & pool balls
@@ -157,22 +195,7 @@ if __name__ == "__main__":
 
     balls = FindBalls(ctrs, img)
 
-    for i,(x,y) in enumerate(balls):
-        cv2.putText(img,
-            f'Ball id: {i}', (x+50, y-25),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.5,
-            (0, 0, 255),
-            1,
-            cv2.LINE_AA)
-        cv2.putText(img,
-            f'({x}, {y})', (x+50, y),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.5,
-            (0, 0, 255),
-            1,
-            cv2.LINE_AA)
-        
+    DrawBalls(balls,img)  
     cv2.imshow('res',img)
     cv2.waitKey(0)
 
