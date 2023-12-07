@@ -154,7 +154,7 @@ def initialCalibration():
     
     # print(finalCorners)
     
-    warped = generate_top_down_view(markersDetectedImage, finalCorners, maxWidth, maxHeight)
+    warped = generate_top_down_view(markersDetectedImage, finalCorners, MAX_WIDTH, MAX_HEIGHT)
 
     return camera_matrix, dist_coeffs, finalCorners, warped
 
@@ -186,7 +186,7 @@ def tableDetection(image, camera_matrix, dist_coeffs):
     
     # print(finalCorners)
     
-    warped = generate_top_down_view(markersDetectedImage, finalCorners, maxWidth, maxHeight)
+    warped = generate_top_down_view(markersDetectedImage, finalCorners, MAX_WIDTH, MAX_HEIGHT)
     
     cv2.imshow('Top-Down View', warped)
     cv2.waitKey(0)
