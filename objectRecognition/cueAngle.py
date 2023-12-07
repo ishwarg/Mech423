@@ -33,6 +33,7 @@ def detectCue(image, camera_matrix, dist_coeffs):
     # Draw detected markers on the undistorted image
     image_markers = image.copy()
     aruco.drawDetectedMarkers(image_markers, valid_corners, valid_ids)
+    
 
     # Return the detected markers' information
     return valid_corners, valid_ids, image_markers
@@ -46,16 +47,16 @@ def determineAngle(image, camera_matrix, dist_coeffs):
     
     finalCorners = [(None)]*2
     if ids is not None and len(ids) == 2:
-        print("Detected 4 ArUco markers:")
+        print("Detected 2 ArUco markers:")
         for i in range(2):
             
-            print(f"Marker ID {ids[i]} - Corners: {corners[i]}")
+            #print(f"Marker ID {ids[i]} - Corners: {corners[i]}")
             
             if ids[i]==4:
                 finalCorners[0]=tuple(corners[i][0][0])
             elif ids[i] == 5:
                 finalCorners[1]=tuple(corners[i][0][0])
-        vector = (finalCorners[1][0]-finalCorners[0][0], finalCorners[1][1]-finalCorners[0][1])
+        vector = (-1*finalCorners[1][0]+finalCorners[0][0], finalCorners[1][1]-finalCorners[0][1])
         angle = m.atan(vector[1]/vector[0])
     else:
         print("No Cue Detected")
@@ -63,6 +64,6 @@ def determineAngle(image, camera_matrix, dist_coeffs):
     
 
     
-    return angle
+    return angle, newImage, finalCorners
 
 
