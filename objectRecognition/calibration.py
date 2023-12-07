@@ -147,6 +147,7 @@ def initialCalibration():
     # print(finalCorners)
     
     warped = generate_top_down_view(markersDetectedImage, finalCorners, maxWidth, maxHeight)
+    cv2.imwrite("PoolTableWithBallsWarped.jpg", warped)
 
     return camera_matrix, dist_coeffs, finalCorners, warped
 

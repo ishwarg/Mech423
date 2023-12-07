@@ -8,7 +8,8 @@ import os
 WHITE_THRESHOLD = 10    #Threshold for the whit part of the ball
 PERCENT_WHITE_THRESHOLD = 0.5   #Threshold for what percentage of the ball is white before it is considered a stiped ball
 MINIMUM_RADIUS = 25     #Minimum pool ball radius to expect in the image
-MAXIMUM_RADIUS = 60     #Max pool ball radius to expect in the image
+MAXIMUM_RADIUS = 80     #Max pool ball radius to expect in the image
+IMGSIZE = [1120, 2240]
 COLOUR_THRESHOLDS = {
     'YELLOW_UPPER':[0, 100, 100],
     'YELLOW_LOWER':[0, 100, 100],
@@ -31,7 +32,7 @@ COLOUR_THRESHOLDS = {
 }
 BACKGROUND_THRESHOLD = {
     'UPPER': np.array([70, 255,240]),
-    'LOWER': np.array([60, 100,150])
+    'LOWER': np.array([45, 100,135])
 }
 
 def FindBalls(ctrs, img):
@@ -69,7 +70,7 @@ def FindBalls(ctrs, img):
         y = int(M["m01"] / M["m00"])
         stdRadius = np.std([((x-ix)**2 + (y-iy)**2)**0.5 for ix, iy in zip(lX, lY)])
 
-        if stdRadius < 2:
+        if stdRadius < 3:
            # Sort the ball
 
            #Get img of specific ball
@@ -141,13 +142,18 @@ def CheckStrips(ballImg):
 if __name__ == "__main__":
 
     #Load pool table & pool balls
-    img = cv2.imread('PoolTableWithBalls3.jpg')
+    img = cv2.imread('PoolTableWithBallsWarped.jpg')
+    #img = cv2.resize(img,IMGSIZE)
     img_copy = img
+    cv2.namedWindow('res',cv2.WINDOW_KEEPRATIO)
 
     #Make sure both images succesfully loaded
     assert img is not None, "file could not be loaded"
 
     ctrs = GenerateContours(img)
+    cv2.drawContours(img_copy,ctrs,-1,255,2)
+    cv2.imshow('res',img_copy)
+    cv2.waitKey(0)
 
     balls = FindBalls(ctrs, img)
 
