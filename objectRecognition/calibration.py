@@ -6,8 +6,8 @@ from itertools import combinations
 import PoolTableConstants
 
 def getPositionMM(x,y):
-    actualx = x*TABLE_LENGTH/MAX_WIDTH
-    actualy = y*TABLE_WIDTH/MAX_HEIGHT
+    actualx = x*float(TABLE_LENGTH)/float(MAX_WIDTH)
+    actualy = y*float(TABLE_WIDTH)/float(MAX_HEIGHT)
     return actualx, actualy
 
 def calibrate_camera(calibration_dir, chessboard_size):
@@ -84,10 +84,10 @@ def generate_top_down_view(image, extremeCorners, maxWidth, maxHeight):
     
 
     dst = np.array([
-		[0, 0],
-		[maxWidth - 1, 0],
-		[maxWidth - 1, maxHeight - 1],
-		[0, maxHeight - 1]], dtype = "float32")
+		[OFFSET, OFFSET],
+		[maxWidth - 1-OFFSET, OFFSET],
+		[maxWidth - 1-OFFSET, maxHeight - 1-OFFSET],
+		[OFFSET, maxHeight - 1-OFFSET]], dtype = "float32")
     # compute the perspective transform matrix and then apply it
 
 
@@ -96,11 +96,11 @@ def generate_top_down_view(image, extremeCorners, maxWidth, maxHeight):
 
 
 
-    # Visualization (Optional)
-    # cv2.imshow('Original Image', image)
-    # cv2.imshow('Top-Down View', warped)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
+   # Visualization (Optional)
+    cv2.imshow('Original Image', image)
+    cv2.imshow('Top-Down View', warped)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
     return warped
 
 
@@ -111,7 +111,7 @@ def initialCalibration():
     
     script_dir = os.path.dirname(os.path.abspath(__file__))
     calibration_dir = os.path.join(script_dir, 'chess')
-    image_path = os.path.join(script_dir, 'IMG_0101.jpg')
+    image_path = os.path.join(script_dir, 'IMG_0113.jpg')
     image =cv2.imread(image_path)
 
     # Create a list of file paths in the calibration directory
