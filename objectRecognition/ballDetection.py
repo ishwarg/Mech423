@@ -92,7 +92,6 @@ def FindBalls(ctrs, img):
 
            #Check Colour against thresholds
            ballImg = cv2.cvtColor(ballImg,cv2.COLOR_BGR2HSV)   #convert color for color identification
-           ballImg_avgColor = cv2.mean(ballImg)
            #color_label = classify_hue(ballImg_avgColor[0],HUE_RANGES)
            #balls[color_label] = [(x, y)]
 
@@ -107,13 +106,13 @@ def FindBalls(ctrs, img):
 #Function to generate contours around all objects
 #Input: Transformed image
 #Output: contours
-def GenerateContours(img):
+def GenerateContours(img,backgroundThreshold):
     # apply blur
     img_blur = cv2.GaussianBlur(img,(5,5),cv2.BORDER_DEFAULT) # blur applied
 
     # mask
     hsv = cv2.cvtColor(img_blur, cv2.COLOR_BGR2HSV) # convert to hsv
-    mask = cv2.inRange(hsv, BACKGROUND_THRESHOLD['LOWER'], BACKGROUND_THRESHOLD['UPPER']) # table's mask
+    mask = cv2.inRange(hsv, backgroundThreshold['lower'], backgroundThreshold['upper']) # table's mask
 
     # filter mask
     kernel = np.ones((5,5),np.uint8)
@@ -177,10 +176,28 @@ def classify_hue(hue_value, hue_ranges):
             return label
     return "Unknown"
 
+def GenerateBackgroundThresholds(img,num_samples):
+    # Get the shape of the image
+    rows, cols, channels = img.shape
+    img_hsv = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
+    # Generate random pixel coordinates
+    random_rows = np.random.randint(int(rows/20), int(rows*19/20), num_samples)
+    random_cols = np.random.randint(int(cols/20), int(cols*19/20), num_samples)
+
+    # Extract color values for the sampled pixels
+    sampled_pixels = img_hsv[random_rows, random_cols]
+
+    # Find the maximum and minimum color values
+    backgroundThreshold = {}
+    backgroundThreshold['upper'] = np.amax(sampled_pixels, axis=0)+10
+    backgroundThreshold['lower'] = np.amin(sampled_pixels, axis=0)-10
+
+    return backgroundThreshold
+
 if __name__ == "__main__":
 
     #Load pool table & pool balls
-    img = cv2.imread('PoolTableWithBallsWarped.jpg')
+    img = cv2.imread('Images\American-style_pool_table_diagram_(empty).png')
     #img = cv2.resize(img,IMGSIZE)
     img_copy = img
     cv2.namedWindow('res',cv2.WINDOW_KEEPRATIO)
