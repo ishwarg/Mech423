@@ -55,7 +55,7 @@ mask = mask[0:int(height/4),0:int(width/4)]
 mask_inv = cv.bitwise_not(mask)
 
 # Generate place balls randomly on the pool table
-for singleBall in ball[0:4]:
+for singleBall in ball[0:10]:
     randX = np.random.randint(0, imgPoolTable.shape[0] - singleBall.shape[0])
     randY = np.random.randint(0, imgPoolTable.shape[1] - singleBall.shape[1])
 
@@ -73,4 +73,4 @@ cv.imshow('res',imgPoolTable)
 cv.waitKey(0)
 cv.destroyAllWindows()
 
-cv.imwrite("PoolTableWithBalls3.jpg", imgPoolTable)
+cv.imwrite("PoolTableWithBalls4.jpg", imgPoolTable)
