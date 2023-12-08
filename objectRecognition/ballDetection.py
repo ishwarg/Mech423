@@ -184,7 +184,9 @@ def GenerateBackgroundThresholds(img,num_samples):
 
     # Find the maximum and minimum color values
     backgroundThreshold = {}
-    backgroundThreshold['upper'] = np.amax(sampled_pixels, axis=0)
+    backgroundThreshold['upper'] = np.amax(sampled_pixels, axis=0)+10
+    if backgroundThreshold['upper'][0] > 180:
+        backgroundThreshold['upper'][0] = backgroundThreshold['upper'][0] - 180
     backgroundThreshold['lower'] = np.amin(sampled_pixels, axis=0)-10
 
     return backgroundThreshold
