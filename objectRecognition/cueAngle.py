@@ -6,7 +6,7 @@ from itertools import combinations
 import math as m
 
 
-def detectCue(image, camera_matrix, dist_coeffs):
+def detectCue(image):
     # Load the image
     
 
@@ -39,10 +39,10 @@ def detectCue(image, camera_matrix, dist_coeffs):
     return valid_corners, valid_ids, image_markers
 
 
-def determineAngle(image, camera_matrix, dist_coeffs):
+def determineAngle(image):
 
 
-    corners, ids, newImage = detectCue(image, camera_matrix, dist_coeffs)
+    corners, ids, newImage = detectCue(image)
 
     
     finalCorners = [(None)]*2

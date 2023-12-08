@@ -6,6 +6,9 @@ import numpy as np
 import os
 import calibration as cc
 import ballDetection as bd
+import cueAngle as ca
+import math as m
+import traceback
 
 
 class MyGUI:
@@ -32,6 +35,11 @@ class MyGUI:
         self.textbox3_label.grid(row=2, column=0, padx=5, pady=5)
         self.textbox3 = tk.Entry(master)
         self.textbox3.grid(row=2, column=1, padx=5, pady=5)
+
+        self.textbox4_label = tk.Label(master, text="Angle: ")
+        self.textbox4_label.grid(row=2, column=2, padx=5, pady=5)
+        self.textbox4 = tk.Entry(master)
+        self.textbox4.grid(row=2, column=3, padx=5, pady=5)
 
         # Create button
         self.submit_button = tk.Button(master, text="Submit", command=self.submit_values)
@@ -77,6 +85,7 @@ class MyGUI:
         else:
             try:
                 corners, ids, image_markers=cc.detect_aruco_markers(frame, camera_matrix, dist_coeffs)
+                
                 finalCorners = [(None)]*4
 
                 if ids is not None and len(ids) == 4:
@@ -98,16 +107,46 @@ class MyGUI:
                 else:
                     print("Could not detect 4 ArUco markers in the image.")
                 warped = cc.generate_top_down_view(image_markers, finalCorners, MAX_WIDTH, MAX_HEIGHT)
+                
                 if self.backgroundThresholdSelect:
+                    
                     self.backgroundThreshold = bd.GenerateBackgroundThresholds(warped, 100)
+                    # print("done the corners")
                     self.backgroundThresholdSelect = False
                     self.backgroundThresholdsCalibrated = True
                     print(self.backgroundThreshold)
 
                 if self.backgroundThresholdsCalibrated:
-                    
-                    pass
+                    gray = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
 
+                    # Apply GaussianBlur to reduce noise
+                    blur = cv2.GaussianBlur(gray, (5, 5), 0)
+
+                    # Apply Hough Circle Transform
+                    circles = cv2.HoughCircles(
+                        blur, 
+                        cv2.HOUGH_GRADIENT, dp=1, minDist=60,
+                        param1=20, param2=10, minRadius=40, maxRadius=45
+                    )
+
+                    # Draw the circles on the original image
+                    if circles is not None:
+                        circles = np.uint16(np.around(circles))
+                        for i in circles[0, :]:
+                            # Draw the outer circle
+                            cv2.circle(warped, (i[0], i[1]), i[2], (0, 255, 0), 2)
+                            # Draw the center of the circle
+                            cv2.circle(warped, (i[0], i[1]), 2, (0, 0, 255), 3)
+                            cv2.putText(warped, f"({i[0]}, {i[1]})", (i[0] + 10, i[1] - 10),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+
+
+                    
+                 
+                # angle, newImage, finalCorners = ca.determineAngle(warped)
+                # self.textbox4.delete(0, tk.END)  # Clear existing text
+                # self.textbox4.insert(0, str(angle*180/m.pi))
+                
                 rgb_frame = cv2.cvtColor(warped, cv2.COLOR_BGR2RGB)
                 rgb_frame = cv2.resize(rgb_frame, (1000, 500))  
 
@@ -118,7 +157,8 @@ class MyGUI:
                 self.image_label.configure(image=photo)
                 self.image_label.image = photo
             except Exception as e:
-                    print(f"Error in detect_aruco_markers: {e}")
+                    traceback_details = traceback.format_exc()
+                    print(f"Error in detect_aruco_markers: {e}\n{traceback_details}")
             
 
         # Call the update method again after 100 milliseconds
@@ -131,6 +171,7 @@ if __name__ == "__main__":
     data = np.load(file_path)
     camera_matrix = data['camera_matrix']
     dist_coeffs = data['dist_coeffs']
+    print(data)
     
 
     root = tk.Tk()

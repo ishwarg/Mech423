@@ -4,6 +4,7 @@ from cv2 import aruco
 import numpy as np
 from itertools import combinations
 from PoolTableConstants import *
+import traceback
 
 
 def getPositionMM(x,y):
@@ -58,32 +59,35 @@ def video_calibration(chessboard_size):
         if not ret:
             print("Error: Failed to capture frame.")
             break
-
+        try:
         # Convert the frame to grayscale
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-        # Find the chessboard corners
-        ret, corners = cv2.findChessboardCorners(gray, chessboard_size, None)
+            # Find the chessboard corners
+            ret, corners = cv2.findChessboardCorners(gray, chessboard_size, None)
 
-        # If corners are found, refine them using cornerSubPix and draw them on the image
-        if ret:
-            objp = np.zeros((chessboard_size[0] * chessboard_size[1], 3), np.float32)
-            objp[:, :2] = np.mgrid[0:chessboard_size[0], 0:chessboard_size[1]].T.reshape(-1, 2)
-            objpoints.append(objp)
-            
-            corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
-            imgpoints.append(corners2)
-            
-            # Draw and display the corners
-            frame = cv2.drawChessboardCorners(frame, chessboard_size, corners2, ret)
-            
-        # Display the frame
-        cv2.imshow("Calibration", frame)
-      
+            # If corners are found, refine them using cornerSubPix and draw them on the image
+            if ret:
+                objp = np.zeros((chessboard_size[0] * chessboard_size[1], 3), np.float32)
+                objp[:, :2] = np.mgrid[0:chessboard_size[0], 0:chessboard_size[1]].T.reshape(-1, 2)
+                objpoints.append(objp)
+                
+                corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
+                imgpoints.append(corners2)
+                
+                # Draw and display the corners
+                frame = cv2.drawChessboardCorners(frame, chessboard_size, corners2, ret)
+                
+            # Display the frame
+            cv2.imshow("Calibration", frame)
+        
 
-        # Exit the loop when 'q' key is pressed
-        if cv2.waitKey(0) & 0xFF == ord('q'):
-            break
+            # Exit the loop when 'q' key is pressed
+            if cv2.waitKey(0) & 0xFF == ord('q'):
+                break
+        except Exception as e:
+                    traceback_details = traceback.format_exc()
+                    print(f"Error in detect_aruco_markers: {e}\n{traceback_details}")
 
     # Release the VideoCapture and close the window
     cap.release()
@@ -99,7 +103,6 @@ def detect_aruco_markers(image, camera_matrix, dist_coeffs):
     
     undistorted_image = cv2.undistort(image, camera_matrix, dist_coeffs)
     
-
     # Convert the image to grayscale
     gray = cv2.cvtColor(undistorted_image, cv2.COLOR_BGR2GRAY)
 

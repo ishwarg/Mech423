@@ -58,7 +58,7 @@ while True:
             print("Could not detect 4 ArUco markers in the image.")
             cv2.imshow(window_name, frame)
         warped = cc.generate_top_down_view(image_markers, finalCorners, MAX_WIDTH, MAX_HEIGHT)
-        cv2.imshow(window_name, frame)
+        cv2.imshow(window_name, warped)
     except Exception as e:
             print(f"Error in detect_aruco_markers: {e}")
             

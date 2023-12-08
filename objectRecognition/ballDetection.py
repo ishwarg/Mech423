@@ -76,7 +76,7 @@ def FindBalls(ctrs, img):
         y = int(M["m01"] / M["m00"])
         stdRadius = np.std([((x-ix)**2 + (y-iy)**2)**0.5 for ix, iy in zip(lX, lY)])
 
-        if stdRadius < 3:
+        if stdRadius < 10:
            # Sort the ball
 
            #Get img of specific ball
@@ -192,7 +192,9 @@ def GenerateBackgroundThresholds(img,num_samples):
     backgroundThreshold['upper'] = np.amax(sampled_pixels, axis=0)+10
     if backgroundThreshold['upper'][0] > 180:
         backgroundThreshold['upper'][0] = backgroundThreshold['upper'][0] - 180
-        backgroundThreshold['upperMiddle'][0] = 0
+        backgroundThreshold['upperMiddle'] = np.amin(sampled_pixels, axis=0)-10
+        backgroundThreshold['upperMiddle'][0] =0
+        backgroundThreshold['lowerMiddle'] = np.amax(sampled_pixels, axis=0)+10
         backgroundThreshold['lowerMiddle'][0] = 180
     backgroundThreshold['lower'] = np.amin(sampled_pixels, axis=0)-10
 
