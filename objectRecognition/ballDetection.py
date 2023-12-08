@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 #import calibration as cc
 import os
-from objectRecognition.PoolTableConstants import *
+from PoolTableConstants import *
 
 HUE_RANGES = [
     ("Red", (0, 15)),
@@ -76,7 +76,7 @@ def FindBalls(ctrs, img):
         y = int(M["m01"] / M["m00"])
         stdRadius = np.std([((x-ix)**2 + (y-iy)**2)**0.5 for ix, iy in zip(lX, lY)])
 
-        if stdRadius < 10:
+        if stdRadius < 15:
            # Sort the ball
 
            #Get img of specific ball
@@ -103,9 +103,25 @@ def FindBalls(ctrs, img):
 #Output: contours
 def GenerateContours(img,backgroundThreshold):
     # apply blur
-    img_blur = cv2.GaussianBlur(img,(5,5),cv2.BORDER_DEFAULT) # blur applied
+    img_blur = cv2.GaussianBlur(img,(5,101),cv2.BORDER_DEFAULT) # blur applied
+    # cv2.imshow("window", img_blur)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
 
-    # mask
+
+
+    '''
+        lower_red = np.array([0, 0, 100])
+        upper_red = np.array([100, 100, 255])
+        mask_red = cv2.inRange(img, lower_red, upper_red)
+        # Convert the mask to a 3-channel image
+        mask_red = cv2.cvtColor(mask_red, cv2.COLOR_GRAY2BGR)
+        # Blend the original image and the red mask
+        blended_img = cv2.addWeighted(img, 0.7, mask_red, 0.3, 0)
+        img_blur  = blended_img
+    '''
+
+
     hsv = cv2.cvtColor(img_blur, cv2.COLOR_BGR2HSV) # convert to hsv
     if len(backgroundThreshold) == 4:
         mask1 = cv2.inRange(hsv, backgroundThreshold['lower'], backgroundThreshold['lowerMiddle']) # table's mask

@@ -239,7 +239,7 @@ def tableDetection(image, camera_matrix, dist_coeffs):
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
-    return finalCorners, warped
+    return  warped
 
 
 

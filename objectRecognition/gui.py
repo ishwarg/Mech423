@@ -10,6 +10,14 @@ import cueAngle as ca
 import math as m
 import traceback
 
+BACKGROUND_THRESHOLDS = {
+    'upper': np.array([180,255,255]),
+    'upperMiddle':np.array([176,190,195]),
+    'lowerMiddle': np.array([2,255,255]),
+    'lower':np.array([0,190,195])
+}
+
+
 
 class MyGUI:
     def __init__(self, master):
@@ -84,69 +92,36 @@ class MyGUI:
        
         else:
             try:
-                corners, ids, image_markers=cc.detect_aruco_markers(frame, camera_matrix, dist_coeffs)
+                # corners, ids, imageWithMarkers=cc.detect_aruco_markers(frame, camera_matrix, dist_coeffs)
                 
-                finalCorners = [(None)]*4
+                # finalCorners = [(None)]*4
 
-                if ids is not None and len(ids) == 4:
-                    #print("Detected 4 ArUco markers:")
-                    for i in range(4):
+                # if ids is not None and len(ids) == 4:
+                #     #print("Detected 4 ArUco markers:")
+                #     for i in range(4):
                         
-                        #print(f"Marker ID {ids[i]} - Corners: {corners[i]}")
+                #         #print(f"Marker ID {ids[i]} - Corners: {corners[i]}")
                         
-                        if ids[i]==0:
-                            finalCorners[int(ids[i])]=tuple(corners[i][0][0])
-                        elif ids[i] == 1:
-                            finalCorners[int(ids[i])]=tuple(corners[i][0][0])
-                        elif ids[i] == 2:
-                            finalCorners[int(ids[i])]=tuple(corners[i][0][0])
-                        elif ids[i] == 3:
+                #         if ids[i]==0:
+                #             finalCorners[int(ids[i])]=tuple(corners[i][0][0])
+                #         elif ids[i] == 1:
+                #             finalCorners[int(ids[i])]=tuple(corners[i][0][0])
+                #         elif ids[i] == 2:
+                #             finalCorners[int(ids[i])]=tuple(corners[i][0][0])
+                #         elif ids[i] == 3:
                             
-                            finalCorners[int(ids[i])]=tuple(corners[i][0][0])
+                #             finalCorners[int(ids[i])]=tuple(corners[i][0][0])
                         
-                else:
-                    print("Could not detect 4 ArUco markers in the image.")
-                warped = cc.generate_top_down_view(image_markers, finalCorners, MAX_WIDTH, MAX_HEIGHT)
-                
-                if self.backgroundThresholdSelect:
-                    
-                    self.backgroundThreshold = bd.GenerateBackgroundThresholds(warped, 100)
-                    # print("done the corners")
-                    self.backgroundThresholdSelect = False
-                    self.backgroundThresholdsCalibrated = True
-                    print(self.backgroundThreshold)
+                # else:
+                #     print("Could not detect 4 ArUco markers in the image.")
+                # warped = cc.generate_top_down_view(imageWithMarkers, finalCorners, MAX_WIDTH, MAX_HEIGHT)
+                warped = cc.tableDetection(frame, camera_matrix, dist_coeffs)
+                # warped = cv2.cvtColor(warped,cv2.COLOR_RGB2BGR)
+                ctrs = bd.GenerateContours(warped, BACKGROUND_THRESHOLDS)
+                cv2.drawContours(warped,ctrs,-1,255,2)
+                balls = bd.FindBalls(ctrs, warped)
+                bd.DrawBalls(balls,warped)
 
-                if self.backgroundThresholdsCalibrated:
-                    gray = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
-
-                    # Apply GaussianBlur to reduce noise
-                    blur = cv2.GaussianBlur(gray, (5, 5), 0)
-
-                    # Apply Hough Circle Transform
-                    circles = cv2.HoughCircles(
-                        blur, 
-                        cv2.HOUGH_GRADIENT, dp=1, minDist=60,
-                        param1=20, param2=10, minRadius=40, maxRadius=45
-                    )
-
-                    # Draw the circles on the original image
-                    if circles is not None:
-                        circles = np.uint16(np.around(circles))
-                        for i in circles[0, :]:
-                            # Draw the outer circle
-                            cv2.circle(warped, (i[0], i[1]), i[2], (0, 255, 0), 2)
-                            # Draw the center of the circle
-                            cv2.circle(warped, (i[0], i[1]), 2, (0, 0, 255), 3)
-                            cv2.putText(warped, f"({i[0]}, {i[1]})", (i[0] + 10, i[1] - 10),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
-
-
-                    
-                 
-                # angle, newImage, finalCorners = ca.determineAngle(warped)
-                # self.textbox4.delete(0, tk.END)  # Clear existing text
-                # self.textbox4.insert(0, str(angle*180/m.pi))
-                
                 rgb_frame = cv2.cvtColor(warped, cv2.COLOR_BGR2RGB)
                 rgb_frame = cv2.resize(rgb_frame, (1000, 500))  
 
@@ -162,7 +137,7 @@ class MyGUI:
             
 
         # Call the update method again after 100 milliseconds
-        self.master.after(100, self.update)
+        self.master.after(10, self.update)
 
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -171,7 +146,7 @@ if __name__ == "__main__":
     data = np.load(file_path)
     camera_matrix = data['camera_matrix']
     dist_coeffs = data['dist_coeffs']
-    print(data)
+    
     
 
     root = tk.Tk()
