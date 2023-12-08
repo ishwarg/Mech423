@@ -4,11 +4,11 @@ from cv2 import aruco
 import numpy as np
 from itertools import combinations
 from PoolTableConstants import *
-import time
+
 
 def getPositionMM(x,y):
-    actualx = x*float(TABLE_LENGTH)/float(MAX_WIDTH)
-    actualy = y*float(TABLE_WIDTH)/float(MAX_HEIGHT)
+    actualx = x*float(TABLE_WIDTH)/float(MAX_WIDTH)
+    actualy = y*float(TABLE_HEIGHT)/float(MAX_HEIGHT)
     return actualx, actualy
 
 def calibrate_camera(calibration_dir, chessboard_size):
@@ -141,10 +141,10 @@ def generate_top_down_view(image, extremeCorners, maxWidth, maxHeight):
     tl, bl, br, tr = extremeCorners
  
     dst = np.array([
-		[OFFSET, OFFSET],
-		[maxWidth - 1-OFFSET, OFFSET],
-		[maxWidth - 1-OFFSET, maxHeight - 1-OFFSET],
-		[OFFSET, maxHeight - 1-OFFSET]], dtype = "float32")
+		[XOFFSET, -YOFFSET],
+		[maxWidth -XOFFSET, -YOFFSET],
+		[maxWidth-XOFFSET, maxHeight+YOFFSET],
+		[XOFFSET, maxHeight+YOFFSET]], dtype = "float32")
     # compute the perspective transform matrix and then apply it
 
 
