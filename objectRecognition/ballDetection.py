@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 #import calibration as cc
 import os
-from objectRecognition.PoolTableConstants import *
+from PoolTableConstants import *
 
 HUE_RANGES = [
     ("Red", (0, 15)),
