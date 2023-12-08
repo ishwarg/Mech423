@@ -125,9 +125,9 @@ def detect_aruco_markers(image, camera_matrix, dist_coeffs):
     image_markers = undistorted_image.copy()
     aruco.drawDetectedMarkers(image_markers, valid_corners, valid_ids)
 
-    cv2.imshow("Aruco Detection", image_markers)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    # cv2.imshow("Aruco Detection", image_markers)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
     # Return the detected markers' information
     return valid_corners, valid_ids, image_markers
 
@@ -175,7 +175,7 @@ def initialCalibration():
 
     
     # Calibrate the camera and obtain camera matrix and distortion coefficients
-    camera_matrix, dist_coeffs = calibrate_camera(calibration_dir, chessboard_size)
+    camera_matrix, dist_coeffs = video_calibration(chessboard_size)
 
     corners, ids, markersDetectedImage = detect_aruco_markers(image, camera_matrix, dist_coeffs)
     
@@ -183,7 +183,7 @@ def initialCalibration():
     finalCorners = [(None)]*4
 
     if ids is not None and len(ids) == 4:
-        print("Detected 4 ArUco markers:")
+        #print("Detected 4 ArUco markers:")
         for i in range(4):
             
             #print(f"Marker ID {ids[i]} - Corners: {corners[i]}")
