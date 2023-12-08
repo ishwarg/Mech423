@@ -2,17 +2,23 @@
 #import objectRecognition.cueAngle as ca
 import objectRecognition.ballDetection as bd
 import shotSelection.physicsModel as pm
-from objectRecognition import PoolTableConstants as ptc
+from objectRecognition.PoolTableConstants import *
 import os
 import cv2
 import numpy as np
 
-BACKGROUND_IMG = 'Somethingelse.jpg'
+BACKGROUND_IMG = 'image.png'
 INPLAY_IMG = 'IMG_0113.jpg'
 #Ball and cue selection
 OBJECT_BALL_INDEX = 1
 POCKET_INDEX = 2
 CUE_BALL_INDEX = 3
+BACKGROUND_THRESHOLDS = {
+    'upper': np.array([8,200,255]),
+    'upperMiddle':np.array([0,100,150]),
+    'lowerMiddle': np.array([180,200,255]),
+    'lower':np.array([172,100,150])
+}
 
 #camera_matrix, dist_coeffs, finalCorners, topDown = cc.initialCalibration()
 # angle = ca.determineAngle(topDown, camera_matrix, dist_coeffs)
@@ -25,8 +31,8 @@ img =cv2.imread(image_path)
 assert img is not None, "file could not be loaded"
 cv2.namedWindow('window',cv2.WINDOW_KEEPRATIO)
 #Debug
-#cv2.imshow('window',img)
-#cv2.waitKey(0)
+cv2.imshow('window',img)
+cv2.waitKey(0)
 
 '''
 #Flatten & crop image
@@ -51,7 +57,7 @@ cv2.imshow('window',image)
 cv2.waitKey(0)
 '''
 #Generate contours
-ctrs = bd.GenerateContours(img, ptc.BACKGROUND_THRESHOLDS)
+ctrs = bd.GenerateContours(img, BACKGROUND_THRESHOLDS)
 #Debug
 img_copy = np.copy(img)
 cv2.drawContours(img_copy,ctrs,-1,255,2)
