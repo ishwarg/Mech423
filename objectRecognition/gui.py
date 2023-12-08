@@ -103,8 +103,11 @@ class MyGUI:
                     self.backgroundThresholdSelect = False
                     self.backgroundThresholdsCalibrated = True
                     print(self.backgroundThreshold)
+
                 if self.backgroundThresholdsCalibrated:
+                    
                     pass
+
                 rgb_frame = cv2.cvtColor(warped, cv2.COLOR_BGR2RGB)
                 rgb_frame = cv2.resize(rgb_frame, (1000, 500))  
 
