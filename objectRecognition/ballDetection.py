@@ -185,6 +185,13 @@ def DrawBalls(balls,img):
             (255, 0, 0),
             1,
             cv2.LINE_AA)
+        
+def FindandDrawBalls(img, backgroundThresholds):
+    ctrs = GenerateContours(img, backgroundThresholds)
+    cv2.drawContours(img,ctrs,-1,255,2)
+    balls = FindBalls(ctrs, img)
+    DrawBalls(balls,img)
+    return balls
 
 def classify_hue(hue_value, hue_ranges):
     for label, (lower, upper) in hue_ranges:

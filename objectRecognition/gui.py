@@ -9,6 +9,16 @@ import ballDetection as bd
 import cueAngle as ca
 import math as m
 import traceback
+from pydub import AudioSegment
+from pydub.generators import Sine
+from pydub.playback import play
+
+
+
+import sys
+sys.path.append('/Users/ishwarjotgrewal/Desktop/Mech423')
+import shotSelection.physicsModel as pm
+
 
 BACKGROUND_THRESHOLDS = {
     'upper': np.array([180,255,255]),
@@ -24,9 +34,10 @@ class MyGUI:
         self.master = master
         self.master.title("GUI with Text Boxes and Image Display")
 
-        self.backgroundThresholdSelect = False
-        self.backgroundThreshold = [None]*2
-        self.backgroundThresholdsCalibrated = False
+        self.cueVector = np.array([0,0])
+        self.objectBall = 0
+        self.cueBall = 1
+        self.pocket = 0
 
        # Create text boxes
         self.textbox1_label = tk.Label(master, text="Object Ball ID:")
@@ -46,8 +57,9 @@ class MyGUI:
 
         self.textbox4_label = tk.Label(master, text="Angle: ")
         self.textbox4_label.grid(row=2, column=2, padx=5, pady=5)
-        self.textbox4 = tk.Entry(master)
+        self.textbox4 = tk.Label(master, text = "(0,0)")
         self.textbox4.grid(row=2, column=3, padx=5, pady=5)
+        
 
         # Create button
         self.submit_button = tk.Button(master, text="Submit", command=self.submit_values)
@@ -74,14 +86,14 @@ class MyGUI:
 
     def submit_values(self):
         # Retrieve values from text boxes and store them in variables
-        value1 = self.textbox1.get()
-        value2 = self.textbox2.get()
-        value3 = self.textbox3.get()
+        self.objectBall = int(self.textbox1.get())
+        self.cueBall = int(self.textbox2.get())
+        self.pocket = int(self.textbox3.get())
 
         # Print the values (you can replace this with your desired logic)
-        print("Object Ball ID:", value1)
-        print("Cue Ball ID:", value2)
-        print("Pocket ID:", value3)
+        print("Object Ball ID:", self.objectBall)
+        print("Cue Ball ID:", self.cueBall)
+        print("Pocket ID:", self.pocket)
 
     def update(self):
         # Read a frame from the video capture
@@ -92,36 +104,38 @@ class MyGUI:
        
         else:
             try:
-                # corners, ids, imageWithMarkers=cc.detect_aruco_markers(frame, camera_matrix, dist_coeffs)
-                
-                # finalCorners = [(None)]*4
-
-                # if ids is not None and len(ids) == 4:
-                #     #print("Detected 4 ArUco markers:")
-                #     for i in range(4):
-                        
-                #         #print(f"Marker ID {ids[i]} - Corners: {corners[i]}")
-                        
-                #         if ids[i]==0:
-                #             finalCorners[int(ids[i])]=tuple(corners[i][0][0])
-                #         elif ids[i] == 1:
-                #             finalCorners[int(ids[i])]=tuple(corners[i][0][0])
-                #         elif ids[i] == 2:
-                #             finalCorners[int(ids[i])]=tuple(corners[i][0][0])
-                #         elif ids[i] == 3:
-                            
-                #             finalCorners[int(ids[i])]=tuple(corners[i][0][0])
-                        
-                # else:
-                #     print("Could not detect 4 ArUco markers in the image.")
-                # warped = cc.generate_top_down_view(imageWithMarkers, finalCorners, MAX_WIDTH, MAX_HEIGHT)
                 warped = cc.tableDetection(frame, camera_matrix, dist_coeffs)
-                # warped = cv2.cvtColor(warped,cv2.COLOR_RGB2BGR)
-                ctrs = bd.GenerateContours(warped, BACKGROUND_THRESHOLDS)
-                cv2.drawContours(warped,ctrs,-1,255,2)
-                balls = bd.FindBalls(ctrs, warped)
-                bd.DrawBalls(balls,warped)
+                balls = bd.FindandDrawBalls(warped, BACKGROUND_THRESHOLDS)
+                
+                collisionObject,objectBallTraj = pm.ObjectBallTraj(balls,self.objectBall,self.pocket)
+                collisionCue,cueBallTraj = pm.CueBallTraj(balls,self.objectBall,self.cueBall,objectBallTraj)
+                pm.DrawTraj(warped,balls[self.objectBall],objectBallTraj) 
+                pm.DrawTraj(warped,balls[self.cueBall],cueBallTraj)  
+                
+                if collisionObject:
+                    print("Object ball has a collision")
+                if collisionCue:
+                    print("Cue ball has a collision")
 
+                self.cueVector =ca.determineAngle(warped, self.cueVector)
+                rounded_array = np.round(self.cueVector, decimals=2)
+                array_string = np.array2string(rounded_array, precision=2, suppress_small=True)
+                self.textbox4.config(text=array_string)
+                magnitude = np.linalg.norm(cueBallTraj)
+                unit_traj = cueBallTraj/magnitude
+                dot_product = np.dot(self.cueVector, unit_traj)
+                print(dot_product)
+
+                # Calculate the allowable range based on the tolerance percentage
+                
+
+                # Check if the dot product is within the allowable range
+                angleCheck = abs(dot_product - 1)<=0.01
+                
+                if angleCheck:
+                    print("Hurray!")
+                    ding_sound = Sine(1000).to_audio_segment(duration=100).fade_in(5).fade_out(5)
+                    play(ding_sound)
                 rgb_frame = cv2.cvtColor(warped, cv2.COLOR_BGR2RGB)
                 rgb_frame = cv2.resize(rgb_frame, (1000, 500))  
 
