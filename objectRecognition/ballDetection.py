@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 #import calibration as cc
 import os
-from objectRecognition.PoolTableConstants import *
+from PoolTableConstants import *
 
 HUE_RANGES = [
     ("Red", (0, 15)),
@@ -184,7 +184,7 @@ def GenerateBackgroundThresholds(img,num_samples):
 
     # Find the maximum and minimum color values
     backgroundThreshold = {}
-    backgroundThreshold['upper'] = np.amax(sampled_pixels, axis=0)+10
+    backgroundThreshold['upper'] = np.amax(sampled_pixels, axis=0)
     backgroundThreshold['lower'] = np.amin(sampled_pixels, axis=0)-10
 
     return backgroundThreshold

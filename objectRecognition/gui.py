@@ -5,10 +5,17 @@ from PoolTableConstants import *
 import numpy as np
 import os
 import calibration as cc
+import ballDetection as bd
+
+
 class MyGUI:
     def __init__(self, master):
         self.master = master
         self.master.title("GUI with Text Boxes and Image Display")
+
+        self.backgroundThresholdSelect = False
+        self.backgroundThreshold = [None]*2
+        self.backgroundThresholdsCalibrated = False
 
        # Create text boxes
         self.textbox1_label = tk.Label(master, text="Object Ball ID:")
@@ -29,6 +36,11 @@ class MyGUI:
         # Create button
         self.submit_button = tk.Button(master, text="Submit", command=self.submit_values)
         self.submit_button.grid(row=3, column=0, columnspan=2, pady=10)
+
+        self.backgroundColour_button = tk.Button(master, text="Background Colour", command=self.getBackgroundColour)
+        self.backgroundColour_button.grid(row=3, column=2, columnspan=2, pady=10)
+
+
         # Image display area
         self.image_label = tk.Label(master)
         self.image_label.grid(row=4, column=0, columnspan=2, pady=10)
@@ -38,6 +50,11 @@ class MyGUI:
 
         # Call the update method after 100 milliseconds
         self.update()
+
+    def getBackgroundColour(self):
+        self.backgroundThresholdSelect = True
+        
+
 
     def submit_values(self):
         # Retrieve values from text boxes and store them in variables
@@ -56,7 +73,7 @@ class MyGUI:
 
         if not ret:
             print("Error: Failed to capture frame.")
-
+       
         else:
             try:
                 corners, ids, image_markers=cc.detect_aruco_markers(frame, camera_matrix, dist_coeffs)
@@ -81,7 +98,13 @@ class MyGUI:
                 else:
                     print("Could not detect 4 ArUco markers in the image.")
                 warped = cc.generate_top_down_view(image_markers, finalCorners, MAX_WIDTH, MAX_HEIGHT)
-                # Convert the frame from BGR to RGB
+                if self.backgroundThresholdSelect:
+                    self.backgroundThreshold = bd.GenerateBackgroundThresholds(warped, 100)
+                    self.backgroundThresholdSelect = False
+                    self.backgroundThresholdsCalibrated = True
+                    print(self.backgroundThreshold)
+                if self.backgroundThresholdsCalibrated:
+                    pass
                 rgb_frame = cv2.cvtColor(warped, cv2.COLOR_BGR2RGB)
                 rgb_frame = cv2.resize(rgb_frame, (1000, 500))  
 
