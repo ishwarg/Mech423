@@ -2,9 +2,10 @@
 #import objectRecognition.cueAngle as ca
 import objectRecognition.ballDetection as bd
 import shotSelection.physicsModel as pm
-from objectRecognition.PoolTableConstants import *
+from objectRecognition import PoolTableConstants as ptc
 import os
 import cv2
+import numpy as np
 
 BACKGROUND_IMG = 'Somethingelse.jpg'
 INPLAY_IMG = 'IMG_0113.jpg'
@@ -50,7 +51,7 @@ cv2.imshow('window',image)
 cv2.waitKey(0)
 '''
 #Generate contours
-ctrs = bd.GenerateContours(img,BACKGROUND_THRESHOLDS)
+ctrs = bd.GenerateContours(img, ptc.BACKGROUND_THRESHOLDS)
 #Debug
 img_copy = np.copy(img)
 cv2.drawContours(img_copy,ctrs,-1,255,2)
