@@ -9,7 +9,7 @@ directoryPath = r'C:\Users\anmol\Documents\UBC\MECH 4\MECH 423\Labs\Final Projec
 
 #Load pool table & pool balls
 #imgPoolTable = cv.imread(os.path.join(directoryPath,'American-style_pool_table_diagram_(empty).png'))
-imgNormal = cv.imread('PoolTableWithBallsWarped.jpg')
+imgNormal = cv.imread('Somethingelse.jpg')
 img = cv.cvtColor(imgNormal,cv.COLOR_BGR2HSV)
 
 # mouse callback function
