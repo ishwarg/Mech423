@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 #import calibration as cc
 import os
-from PoolTableConstants import *
+from objectRecognition.PoolTableConstants import *
 
 HUE_RANGES = [
     ("Red", (0, 15)),
@@ -159,14 +159,14 @@ def DrawBalls(balls,img):
             f'Ball id: {i}', (x+50, y-25),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.5,
-            (0, 0, 255),
+            (255, 0, 0),
             1,
             cv2.LINE_AA)
         cv2.putText(img,
             f'({x}, {y})', (x+50, y),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.5,
-            (0, 0, 255),
+            (255, 0, 0),
             1,
             cv2.LINE_AA)
 

@@ -9,7 +9,7 @@ directoryPath = r'C:\Users\anmol\Documents\UBC\MECH 4\MECH 423\Labs\Final Projec
 
 #Load pool table & pool balls
 #imgPoolTable = cv.imread(os.path.join(directoryPath,'American-style_pool_table_diagram_(empty).png'))
-imgNormal = cv.imread('Somethingelse.jpg')
+imgNormal = cv.imread('image.png')
 img = cv.cvtColor(imgNormal,cv.COLOR_BGR2HSV)
 
 # mouse callback function
@@ -19,10 +19,11 @@ def draw_circle(event,x,y,flags,param):
         pixel_value_str = f"Pixel Value: {pixel_value}"
         font = cv.FONT_HERSHEY_SIMPLEX
         cv.putText(img, pixel_value_str, (x, y), font, 1, (255, 255, 255), 2, cv.LINE_AA)
+        cv.circle(img,(x,y),80,1)
 
 # Create a black image, a window and bind the function to window
 cv.namedWindow('image',cv.WINDOW_KEEPRATIO)
-#cv.resizeWindow('image', 1000, 1000)
+#cv.resize(img, (2000, 1000))
 cv.setMouseCallback('image',draw_circle)
 
 while(1):
