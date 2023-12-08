@@ -1,10 +1,7 @@
 import numpy as np
 import cv2
-from objectRecognition import cueAngle as ca , ballDetection as bd, calibration as cc
-from PoolTableConstants import *
-
-RADIUS = cc.RADIUS# in mm
-POCKETS = [(0,0),(0,MAX_HEIGHT),(MAX_WIDTH/2,MAX_HEIGHT),(MAX_WIDTH,MAX_HEIGHT),(MAX_WIDTH,0),(MAX_WIDTH/2,0)]
+#from objectRecognition import cueAngle as ca , ballDetection as bd, calibration as cc
+from objectRecognition.PoolTableConstants import *
 
 #Function to see if there are ball collisions
 #Input: 
@@ -48,16 +45,19 @@ def CheckCircleCollision(balls, ballIndices, traj):
 def ObjectBallTraj(balls,ballIndex,pocketIndex):
 
     traj = POCKETS[pocketIndex] - balls[ballIndex]
-    Collision = CheckCircleCollision(balls, ballIndex, traj)
+    Collision = CheckCircleCollision(balls, [ballIndex,], traj)
     return Collision, traj
 
 def CueBallTraj(balls,objectBallIndex,cueBallIndex,objectBallTraj):
-    Line_end = objectBallTraj/-np.linalg.norm(objectBallTraj)*2*RADIUS + balls[objectBallIndex]
+    Line_end = objectBallTraj/(np.linalg.norm(objectBallTraj))*2*RADIUS + balls[objectBallIndex]
     Line_start = balls[cueBallIndex]
-    traj = Line_start - Line_end
+    traj = Line_start - Line_end.astype(int)
     Collision = CheckCircleCollision(balls, [cueBallIndex,objectBallIndex], traj)
 
     return Collision, traj
+
+def DrawTraj(img,ball,traj):
+    cv2.line(img,ball,ball+traj,(255,0,0),5)
 
 
 

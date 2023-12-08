@@ -150,9 +150,6 @@ def generate_top_down_view(image, extremeCorners, maxWidth, maxHeight):
 
     M = cv2.getPerspectiveTransform(np.array([tl, tr, br, bl], dtype="float32"), dst)
     warped = cv2.warpPerspective(image, M, (maxWidth, maxHeight), flags = cv2.INTER_LINEAR)
-
-
-
 #    # Visualization (Optional)
 #     cv2.imshow('Original Image', image)
 #     cv2.imshow('Top-Down View', warped)

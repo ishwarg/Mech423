@@ -1,9 +1,9 @@
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-import calibration as cc
+#import calibration as cc
 import os
-from PoolTableConstants import *
+from objectRecognition.PoolTableConstants import *
 
 HUE_RANGES = [
     ("Red", (0, 15)),
@@ -81,8 +81,9 @@ def FindBalls(ctrs, img):
 
            #Get img of specific ball
            ballImg = GenerateBallImg(c,img)
-           cv2.imshow('res',ballImg)
-           cv2.waitKey(0)
+           #Debug
+           #cv2.imshow('res',ballImg)
+           #cv2.waitKey(0)
 
            #Check Colour against thresholds
            ballImg = cv2.cvtColor(ballImg,cv2.COLOR_BGR2HSV)   #convert color for color identification
@@ -93,7 +94,7 @@ def FindBalls(ctrs, img):
            #Sort balls
 
 
-           balls+=[(x, y)]
+           balls+=[np.array([x, y])]
 
     return balls
 
@@ -188,6 +189,7 @@ def GenerateBackgroundThresholds(img,num_samples):
 
     return backgroundThreshold
 
+'''
 if __name__ == "__main__":
 
     #Load pool table & pool balls
@@ -209,4 +211,4 @@ if __name__ == "__main__":
     DrawBalls(balls,img)  
     cv2.imshow('res',img)
     cv2.waitKey(0)
-
+'''
