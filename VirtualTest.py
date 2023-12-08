@@ -24,8 +24,8 @@ img =cv2.imread(image_path)
 assert img is not None, "file could not be loaded"
 cv2.namedWindow('window',cv2.WINDOW_KEEPRATIO)
 #Debug
-cv2.imshow('window',img)
-cv2.waitKey(0)
+#cv2.imshow('window',img)
+#cv2.waitKey(0)
 
 '''
 #Flatten & crop image
@@ -59,24 +59,45 @@ cv2.waitKey(0)
 
 #Find ball Indices
 balls = bd.FindBalls(ctrs, img)
-#Debug
-img_copy = np.copy(img)
-bd.DrawBalls(balls,img_copy)  
-cv2.imshow('window',img_copy)
-cv2.waitKey(0)
+img_ids = np.copy(img)
+bd.DrawBalls(balls,img_ids) 
+#Debug 
+#cv2.imshow('window',img_ids)
+#cv2.waitKey(0)
 
 #Find ball trajectories
-collisionObject,objectBallTraj = pm.ObjectBallTraj(balls,OBJECT_BALL_INDEX,POCKET_INDEX)
-collisionCue,cueBallTraj = pm.CueBallTraj(balls,OBJECT_BALL_INDEX,CUE_BALL_INDEX,objectBallTraj)
-#debug
-if collisionObject:
-    print("Object ball has a collision")
-if collisionCue:
-    print("Cue ball has a collision")
-img_copy = np.copy(img)
-pm.DrawTraj(img_copy,balls[OBJECT_BALL_INDEX],objectBallTraj) 
-pm.DrawTraj(img_copy,balls[CUE_BALL_INDEX],cueBallTraj)  
-cv2.imshow('window',img_copy)
-cv2.waitKey(0)
+#user_input = input("Enter something: ")
+
+# Print the user input
+while(True):
+    
+    cv2.imshow('window',img_ids)
+    cv2.waitKey(0)
+
+    POCKET_INDEX = int(input("Select pocket index:"))
+    print("You entered:", POCKET_INDEX)
+
+    OBJECT_BALL_INDEX = int(input("Select object ball index:"))
+    print("You entered:", OBJECT_BALL_INDEX)
+
+    CUE_BALL_INDEX = int(input("Select cue ball index:"))
+    print("You entered:", CUE_BALL_INDEX)
+
+    collisionObject,objectBallTraj = pm.ObjectBallTraj(balls,OBJECT_BALL_INDEX,POCKET_INDEX)
+    collisionCue,cueBallTraj = pm.CueBallTraj(balls,OBJECT_BALL_INDEX,CUE_BALL_INDEX,objectBallTraj)
+    #debug
+    if collisionObject:
+        print("Object ball has a collision")
+    if collisionCue:
+        print("Cue ball has a collision")
+    img_copy = np.copy(img)
+    pm.DrawTraj(img_copy,balls[OBJECT_BALL_INDEX],objectBallTraj) 
+    pm.DrawTraj(img_copy,balls[CUE_BALL_INDEX],cueBallTraj)  
+    cv2.imshow('window',img_copy)
+    cv2.waitKey(0)
+    user_input = input("Enter something ('exit' to break): ")
+
+    if user_input.lower() == 'exit':
+        break
 
 

@@ -49,15 +49,17 @@ def ObjectBallTraj(balls,ballIndex,pocketIndex):
     return Collision, traj
 
 def CueBallTraj(balls,objectBallIndex,cueBallIndex,objectBallTraj):
-    Line_end = objectBallTraj/(np.linalg.norm(objectBallTraj))*2*RADIUS + balls[objectBallIndex]
+    trajDir =  objectBallTraj/ np.linalg.norm(objectBallTraj)
+    Line_end = -trajDir*2*RADIUS + balls[objectBallIndex]
     Line_start = balls[cueBallIndex]
-    traj = Line_start - Line_end.astype(int)
+    traj = Line_end.astype(int) - Line_start
     Collision = CheckCircleCollision(balls, [cueBallIndex,objectBallIndex], traj)
 
     return Collision, traj
 
 def DrawTraj(img,ball,traj):
-    cv2.line(img,ball,ball+traj,(255,0,0),5)
+    cv2.line(img,ball,ball+traj,(255,0,0),2)
+    cv2.circle(img,ball+traj,RADIUS,(255,0,0),1)
 
 
 
