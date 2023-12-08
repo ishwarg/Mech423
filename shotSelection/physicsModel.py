@@ -14,6 +14,7 @@ def CheckCircleCollision(balls, ballIndices, traj):
     
     line_start = balls[ballIndices[0]]
     for i,circle_center in enumerate(balls):
+        # Ignore these indices
         if i in ballIndices:
             continue
 
