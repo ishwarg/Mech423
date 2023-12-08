@@ -107,7 +107,12 @@ def GenerateContours(img,backgroundThreshold):
 
     # mask
     hsv = cv2.cvtColor(img_blur, cv2.COLOR_BGR2HSV) # convert to hsv
-    mask = cv2.inRange(hsv, backgroundThreshold['lower'], backgroundThreshold['upper']) # table's mask
+    if len(backgroundThreshold == 4):
+        mask1 = cv2.inRange(hsv, backgroundThreshold['lower'], backgroundThreshold['lowerMiddle']) # table's mask
+        mask2 = cv2.inRange(hsv, backgroundThreshold['upperMiddle'], backgroundThreshold['upper']) # table's mask
+        mask = cv2.bitwise_or(mask1, mask2)
+    else:
+        mask = cv2.inRange(hsv, backgroundThreshold['lower'], backgroundThreshold['upper']) # table's mask
 
     # filter mask
     kernel = np.ones((5,5),np.uint8)
@@ -187,6 +192,8 @@ def GenerateBackgroundThresholds(img,num_samples):
     backgroundThreshold['upper'] = np.amax(sampled_pixels, axis=0)+10
     if backgroundThreshold['upper'][0] > 180:
         backgroundThreshold['upper'][0] = backgroundThreshold['upper'][0] - 180
+        backgroundThreshold['upperMiddle'][0] = 0
+        backgroundThreshold['lowerMiddle'][0] = 180
     backgroundThreshold['lower'] = np.amin(sampled_pixels, axis=0)-10
 
     return backgroundThreshold
