@@ -107,7 +107,7 @@ def GenerateContours(img,backgroundThreshold):
 
     # mask
     hsv = cv2.cvtColor(img_blur, cv2.COLOR_BGR2HSV) # convert to hsv
-    if len(backgroundThreshold == 4):
+    if len(backgroundThreshold) == 4:
         mask1 = cv2.inRange(hsv, backgroundThreshold['lower'], backgroundThreshold['lowerMiddle']) # table's mask
         mask2 = cv2.inRange(hsv, backgroundThreshold['upperMiddle'], backgroundThreshold['upper']) # table's mask
         mask = cv2.bitwise_or(mask1, mask2)
