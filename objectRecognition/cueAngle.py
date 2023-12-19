@@ -23,31 +23,39 @@ def detectCue(image):
 
     # Detect ArUco markers
     corners, ids, rejected = detector.detectMarkers(gray)
+   
 
-    # Filter markers with IDs 0 to 3
-    valid_ids = [4,5]
-    valid_corners = [corner for corner, marker_id in zip(corners, ids) if marker_id[0] in valid_ids]
-    valid_ids = [marker_id[0] for marker_id in ids if marker_id[0] in valid_ids]
-    valid_ids = np.array(valid_ids)
-
-    # Draw detected markers on the undistorted image
-    image_markers = image.copy()
-    aruco.drawDetectedMarkers(image_markers, valid_corners, valid_ids)
+    if ids is not None:
+        valid_ids = [4,5]
+        valid_corners = [corner for corner, marker_id in zip(corners, ids) if marker_id[0] in valid_ids]
+        valid_ids = [marker_id[0] for marker_id in ids if marker_id[0] in valid_ids]
+        valid_ids = np.array(valid_ids)
+        # Draw detected markers on the undistorted image
+    
+        aruco.drawDetectedMarkers(image, valid_corners, valid_ids)
+        # Return the detected markers' information
+        return valid_corners, valid_ids, image
+    
+    else:
+        return [], [], image
     
 
-    # Return the detected markers' information
-    return valid_corners, valid_ids, image_markers
+    
 
 
-def determineAngle(image):
+    # Filter markers with IDs 0 to 3
+    
 
 
-    corners, ids, newImage = detectCue(image)
+def determineAngle(image, vector):
 
+
+    corners, ids, image = detectCue(image)
+    
     
     finalCorners = [(None)]*2
     if ids is not None and len(ids) == 2:
-        print("Detected 2 ArUco markers:")
+        #print("Detected 2 ArUco markers:")
         for i in range(2):
             
             #print(f"Marker ID {ids[i]} - Corners: {corners[i]}")
@@ -56,14 +64,19 @@ def determineAngle(image):
                 finalCorners[0]=tuple(corners[i][0][0])
             elif ids[i] == 5:
                 finalCorners[1]=tuple(corners[i][0][0])
-        vector = (-1*finalCorners[1][0]+finalCorners[0][0], finalCorners[1][1]-finalCorners[0][1])
-        angle = m.atan(vector[1]/vector[0])
+        vector = [finalCorners[0][0]-finalCorners[1][0], finalCorners[0][1]-finalCorners[1][1]]
+        
     else:
         print("No Cue Detected")
-        angle = 0
-    
+        return vector
+    vector = np.array(vector)
+    magnitude = np.linalg.norm(vector)
 
+    # Step 3: Create the unit vector by dividing each element by the magnitude
+    unit_vector = vector / magnitude
     
-    return angle, newImage, finalCorners
+    
+    
+    return unit_vector
 
 

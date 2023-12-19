@@ -9,6 +9,24 @@ import ballDetection as bd
 import cueAngle as ca
 import math as m
 import traceback
+from pydub import AudioSegment
+from pydub.generators import Sine
+from pydub.playback import play
+
+
+
+import sys
+sys.path.append('/Users/ishwarjotgrewal/Desktop/Mech423')
+import shotSelection.physicsModel as pm
+
+
+BACKGROUND_THRESHOLDS = {
+    'upper': np.array([180,240,250]),
+    'upperMiddle':np.array([176,190,181]),
+    'lowerMiddle': np.array([5,240,255]),
+    'lower':np.array([0,190,181])
+}
+
 
 
 class MyGUI:
@@ -16,10 +34,17 @@ class MyGUI:
         self.master = master
         self.master.title("GUI with Text Boxes and Image Display")
 
-        self.backgroundThresholdSelect = False
-        self.backgroundThreshold = [None]*2
-        self.backgroundThresholdsCalibrated = False
-
+        self.cueVector = np.array([0,0])
+        self.objectBall = 1
+        self.cueBall = 0
+        self.pocket = 4
+        self.previousCorners = np.array([
+		[XOFFSET, 0],
+		[MAX_WIDTH -XOFFSET, 0],
+		[MAX_WIDTH-XOFFSET, MAX_HEIGHT],
+		[XOFFSET, MAX_HEIGHT]], dtype = "int32")
+        self.shotTaken = True
+        
        # Create text boxes
         self.textbox1_label = tk.Label(master, text="Object Ball ID:")
         self.textbox1_label.grid(row=0, column=0, padx=5, pady=5)
@@ -38,14 +63,15 @@ class MyGUI:
 
         self.textbox4_label = tk.Label(master, text="Angle: ")
         self.textbox4_label.grid(row=2, column=2, padx=5, pady=5)
-        self.textbox4 = tk.Entry(master)
+        self.textbox4 = tk.Label(master, text = "(0,0)")
         self.textbox4.grid(row=2, column=3, padx=5, pady=5)
+        
 
         # Create button
         self.submit_button = tk.Button(master, text="Submit", command=self.submit_values)
         self.submit_button.grid(row=3, column=0, columnspan=2, pady=10)
 
-        self.backgroundColour_button = tk.Button(master, text="Background Colour", command=self.getBackgroundColour)
+        self.backgroundColour_button = tk.Button(master, text="Done Shot", command=self.getBackgroundColour)
         self.backgroundColour_button.grid(row=3, column=2, columnspan=2, pady=10)
 
 
@@ -55,25 +81,26 @@ class MyGUI:
 
         # Set up the video capture (replace '0' with your camera index or file path)
         self.cap = cv2.VideoCapture(1)
-
+        
         # Call the update method after 100 milliseconds
         self.update()
 
     def getBackgroundColour(self):
-        self.backgroundThresholdSelect = True
+        self.shotTaken = True
         
 
 
     def submit_values(self):
         # Retrieve values from text boxes and store them in variables
-        value1 = self.textbox1.get()
-        value2 = self.textbox2.get()
-        value3 = self.textbox3.get()
+        self.objectBall = int(self.textbox1.get())
+        self.cueBall = int(self.textbox2.get())
+        self.pocket = int(self.textbox3.get())
 
         # Print the values (you can replace this with your desired logic)
-        print("Object Ball ID:", value1)
-        print("Cue Ball ID:", value2)
-        print("Pocket ID:", value3)
+        print("Object Ball ID:", self.objectBall)
+        print("Cue Ball ID:", self.cueBall)
+        print("Pocket ID:", self.pocket)
+        self.shotTaken = False
 
     def update(self):
         # Read a frame from the video capture
@@ -84,69 +111,44 @@ class MyGUI:
        
         else:
             try:
-                corners, ids, image_markers=cc.detect_aruco_markers(frame, camera_matrix, dist_coeffs)
+                warped, self.previousCorners = cc.tableDetection(frame, camera_matrix, dist_coeffs, self.previousCorners)
                 
-                finalCorners = [(None)]*4
-
-                if ids is not None and len(ids) == 4:
-                    #print("Detected 4 ArUco markers:")
-                    for i in range(4):
-                        
-                        #print(f"Marker ID {ids[i]} - Corners: {corners[i]}")
-                        
-                        if ids[i]==0:
-                            finalCorners[int(ids[i])]=tuple(corners[i][0][0])
-                        elif ids[i] == 1:
-                            finalCorners[int(ids[i])]=tuple(corners[i][0][0])
-                        elif ids[i] == 2:
-                            finalCorners[int(ids[i])]=tuple(corners[i][0][0])
-                        elif ids[i] == 3:
-                            
-                            finalCorners[int(ids[i])]=tuple(corners[i][0][0])
-                        
-                else:
-                    print("Could not detect 4 ArUco markers in the image.")
-                warped = cc.generate_top_down_view(image_markers, finalCorners, MAX_WIDTH, MAX_HEIGHT)
-                
-                if self.backgroundThresholdSelect:
+                balls = bd.FindandDrawBalls(warped, BACKGROUND_THRESHOLDS)
+                if not self.shotTaken:
+                    collisionObject,objectBallTraj = pm.ObjectBallTraj(balls,self.objectBall,self.pocket)
+                    collisionCue,cueBallTraj = pm.CueBallTraj(balls,self.objectBall,self.cueBall,objectBallTraj)
+                    pm.DrawTraj(warped,balls[self.objectBall],objectBallTraj) 
+                    pm.DrawTraj(warped,balls[self.cueBall],cueBallTraj)  
                     
-                    self.backgroundThreshold = bd.GenerateBackgroundThresholds(warped, 100)
-                    # print("done the corners")
-                    self.backgroundThresholdSelect = False
-                    self.backgroundThresholdsCalibrated = True
-                    print(self.backgroundThreshold)
+                    if collisionObject:
+                        print("Object ball has a collision")
+                    if collisionCue:
+                        print("Cue ball has a collision")
 
-                if self.backgroundThresholdsCalibrated:
-                    gray = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
-
-                    # Apply GaussianBlur to reduce noise
-                    blur = cv2.GaussianBlur(gray, (5, 5), 0)
-
-                    # Apply Hough Circle Transform
-                    circles = cv2.HoughCircles(
-                        blur, 
-                        cv2.HOUGH_GRADIENT, dp=1, minDist=60,
-                        param1=20, param2=10, minRadius=40, maxRadius=45
-                    )
-
-                    # Draw the circles on the original image
-                    if circles is not None:
-                        circles = np.uint16(np.around(circles))
-                        for i in circles[0, :]:
-                            # Draw the outer circle
-                            cv2.circle(warped, (i[0], i[1]), i[2], (0, 255, 0), 2)
-                            # Draw the center of the circle
-                            cv2.circle(warped, (i[0], i[1]), 2, (0, 0, 255), 3)
-                            cv2.putText(warped, f"({i[0]}, {i[1]})", (i[0] + 10, i[1] - 10),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
-
-
+                    self.cueVector =ca.determineAngle(warped, self.cueVector)
+                    print(self.cueVector)
+                    #cv2.line(warped, np.array(self.previousCorners[0], dtype = "int32"), np.array(self.previousCorners[0], dtype = "int32") + np.array(100*self.cueVector, dtype = "int32"),(0,255,0),2)
                     
-                 
-                # angle, newImage, finalCorners = ca.determineAngle(warped)
-                # self.textbox4.delete(0, tk.END)  # Clear existing text
-                # self.textbox4.insert(0, str(angle*180/m.pi))
-                
+                    rounded_array = np.round(self.cueVector, decimals=2)
+                    array_string = np.array2string(rounded_array, precision=2, suppress_small=True)
+                    self.textbox4.config(text=array_string)
+                    magnitude = np.linalg.norm(cueBallTraj)
+                    unit_traj = cueBallTraj/magnitude
+                    dot_product = np.dot(self.cueVector, unit_traj)
+                    print(dot_product)
+
+                    # Calculate the allowable range based on the tolerance percentage
+                    
+
+                    # Check if the dot product is within the allowable range
+                    angleCheck = abs(dot_product - 1)<=0.01
+                    
+                    
+                    if angleCheck:
+                        print("Hurray!")
+                        ding_sound = Sine(1000).to_audio_segment(duration=100).fade_in(5).fade_out(5)
+                        play(ding_sound)
+                  
                 rgb_frame = cv2.cvtColor(warped, cv2.COLOR_BGR2RGB)
                 rgb_frame = cv2.resize(rgb_frame, (1000, 500))  
 
@@ -171,8 +173,9 @@ if __name__ == "__main__":
     data = np.load(file_path)
     camera_matrix = data['camera_matrix']
     dist_coeffs = data['dist_coeffs']
-    print(data)
     
+    
+
 
     root = tk.Tk()
     my_gui = MyGUI(root)

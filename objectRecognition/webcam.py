@@ -3,9 +3,15 @@ import calibration as cc
 import os
 import numpy as np
 from PoolTableConstants import *
+import traceback
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 file_path = os.path.join(script_dir, 'calibration_data.npz')
+previousCorners = np.array([
+		[XOFFSET, 0],
+		[MAX_WIDTH -XOFFSET, 0],
+		[MAX_WIDTH-XOFFSET, MAX_HEIGHT],
+		[XOFFSET, MAX_HEIGHT]], dtype = "int32")
 
 data = np.load(file_path)
 camera_matrix = data['camera_matrix']
@@ -31,37 +37,16 @@ while True:
     # Break the loop if reading the frame fails
     if not ret:
         print("Error: Failed to capture frame.")
-        break
-
+        
+    else:
     # Display the frame
-    try:
-        corners, ids, image_markers=cc.detect_aruco_markers(frame, camera_matrix, dist_coeffs)
-        finalCorners = [(None)]*4
-
-        if ids is not None and len(ids) == 4:
-            #print("Detected 4 ArUco markers:")
-            for i in range(4):
-                
-                #print(f"Marker ID {ids[i]} - Corners: {corners[i]}")
-                
-                if ids[i]==0:
-                    finalCorners[int(ids[i])]=tuple(corners[i][0][0])
-                elif ids[i] == 1:
-                    finalCorners[int(ids[i])]=tuple(corners[i][0][3])
-                elif ids[i] == 2:
-                    finalCorners[int(ids[i])]=tuple(corners[i][0][2])
-                elif ids[i] == 3:
-                    
-                    finalCorners[int(ids[i])]=tuple(corners[i][0][1])
-                
-        else:
-            print("Could not detect 4 ArUco markers in the image.")
-            cv2.imshow(window_name, frame)
-        warped = cc.generate_top_down_view(image_markers, finalCorners, MAX_WIDTH, MAX_HEIGHT)
-        cv2.imshow(window_name, warped)
-    except Exception as e:
-            print(f"Error in detect_aruco_markers: {e}")
-            
+        try:
+            warped, previousCorners = cc.tableDetection(frame, camera_matrix, dist_coeffs, previousCorners)
+            cv2.imshow(window_name, warped)
+        except Exception as e:
+                traceback_details = traceback.format_exc()
+                print(f"Error in detect_aruco_markers: {e}\n{traceback_details}")
+        
     
     
 

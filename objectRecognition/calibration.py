@@ -144,10 +144,10 @@ def generate_top_down_view(image, extremeCorners, maxWidth, maxHeight):
     tl, bl, br, tr = extremeCorners
  
     dst = np.array([
-		[XOFFSET, -YOFFSET],
-		[maxWidth -XOFFSET, -YOFFSET],
-		[maxWidth-XOFFSET, maxHeight+YOFFSET],
-		[XOFFSET, maxHeight+YOFFSET]], dtype = "float32")
+		[XOFFSET, 0],
+		[maxWidth -XOFFSET, 0],
+		[maxWidth-XOFFSET, maxHeight],
+		[XOFFSET, maxHeight]], dtype = "float32")
     # compute the perspective transform matrix and then apply it
 
 
@@ -191,12 +191,12 @@ def initialCalibration():
             if ids[i]==0:
                 finalCorners[int(ids[i])]=tuple(corners[i][0][0])
             elif ids[i] == 1:
-                finalCorners[int(ids[i])]=tuple(corners[i][0][3])
+                finalCorners[int(ids[i])]=tuple(corners[i][0][0])
             elif ids[i] == 2:
-                finalCorners[int(ids[i])]=tuple(corners[i][0][2])
+                finalCorners[int(ids[i])]=tuple(corners[i][0][0])
             elif ids[i] == 3:
                 
-                finalCorners[int(ids[i])]=tuple(corners[i][0][1])
+                finalCorners[int(ids[i])]=tuple(corners[i][0][0])
             
     else:
         print("Could not detect 4 ArUco markers in the image.")
@@ -208,38 +208,41 @@ def initialCalibration():
 
     return camera_matrix, dist_coeffs, finalCorners, warped
 
-def tableDetection(image, camera_matrix, dist_coeffs):
+def tableDetection(image, camera_matrix, dist_coeffs, previousCorners):
     corners, ids, markersDetectedImage = detect_aruco_markers(image, camera_matrix, dist_coeffs)
-    
-
+    print(ids)
     finalCorners = [(None)]*4
 
     if ids is not None and len(ids) == 4:
-        print("Detected 4 ArUco markers:")
+        #print("Detected 4 ArUco markers:")
         for i in range(4):
             
-            print(f"Marker ID {ids[i]} - Corners: {corners[i]}")
+            #print(f"Marker ID {ids[i]} - Corners: {corners[i]}")
             
             if ids[i]==0:
                 finalCorners[int(ids[i])]=tuple(corners[i][0][0])
             elif ids[i] == 1:
-                finalCorners[int(ids[i])]=tuple(corners[i][0][3])
+                finalCorners[int(ids[i])]=tuple(corners[i][0][0])
             elif ids[i] == 2:
-                finalCorners[int(ids[i])]=tuple(corners[i][0][2])
+                finalCorners[int(ids[i])]=tuple(corners[i][0][0])
             elif ids[i] == 3:
                 
-                finalCorners[int(ids[i])]=tuple(corners[i][0][1])
+                finalCorners[int(ids[i])]=tuple(corners[i][0][0])
+        warped = generate_top_down_view(markersDetectedImage, finalCorners, MAX_WIDTH, MAX_HEIGHT)
+        finalCorners = finalCorners
             
     else:
         print("Could not detect 4 ArUco markers in the image.")
+        warped = generate_top_down_view(image, previousCorners, MAX_WIDTH, MAX_HEIGHT)
+        finalCorners = previousCorners
     
-    warped = generate_top_down_view(markersDetectedImage, finalCorners, MAX_WIDTH, MAX_HEIGHT)
     
-    cv2.imshow('Top-Down View', warped)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    
+    # cv2.imshow('Top-Down View', warped)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
 
-    return finalCorners, warped
+    return  warped, finalCorners
 
 
 

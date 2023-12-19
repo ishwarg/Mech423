@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 #import calibration as cc
 import os
-from objectRecognition.PoolTableConstants import *
+from PoolTableConstants import *
 
 HUE_RANGES = [
     ("Red", (0, 15)),
@@ -71,7 +71,7 @@ def FindBalls(ctrs, img):
         y = int(M["m01"] / M["m00"])
         stdRadius = np.std([((x-ix)**2 + (y-iy)**2)**0.5 for ix, iy in zip(lX, lY)])
 
-        if stdRadius < 15:
+        if stdRadius < 10:
            # Sort the ball
 
            #Get img of specific ball
@@ -98,8 +98,7 @@ def FindBalls(ctrs, img):
 #Output: contours
 def GenerateContours(img,backgroundThreshold):
     # apply blur
-    img_copy = np.copy(img)
-    img_blur = cv2.GaussianBlur(img,(51,51),cv2.BORDER_DEFAULT) # blur applied
+    img_blur = cv2.GaussianBlur(img,(5,5),cv2.BORDER_DEFAULT) # blur applied
 
     # mask
     hsv = cv2.cvtColor(img_blur, cv2.COLOR_BGR2HSV) # convert to hsv
@@ -169,6 +168,13 @@ def DrawBalls(balls,img):
             (255, 0, 0),
             1,
             cv2.LINE_AA)
+        
+def FindandDrawBalls(img, backgroundThresholds):
+    ctrs = GenerateContours(img, backgroundThresholds)
+    cv2.drawContours(img,ctrs,-1,255,2)
+    balls = FindBalls(ctrs, img)
+    DrawBalls(balls,img)
+    return balls
 
 def classify_hue(hue_value, hue_ranges):
     for label, (lower, upper) in hue_ranges:
