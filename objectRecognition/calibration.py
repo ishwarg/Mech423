@@ -208,9 +208,9 @@ def initialCalibration():
 
     return camera_matrix, dist_coeffs, finalCorners, warped
 
-def tableDetection(image, camera_matrix, dist_coeffs):
+def tableDetection(image, camera_matrix, dist_coeffs, previousCorners):
     corners, ids, markersDetectedImage = detect_aruco_markers(image, camera_matrix, dist_coeffs)
-    
+    print(ids)
     finalCorners = [(None)]*4
 
     if ids is not None and len(ids) == 4:
@@ -228,17 +228,21 @@ def tableDetection(image, camera_matrix, dist_coeffs):
             elif ids[i] == 3:
                 
                 finalCorners[int(ids[i])]=tuple(corners[i][0][0])
+        warped = generate_top_down_view(markersDetectedImage, finalCorners, MAX_WIDTH, MAX_HEIGHT)
+        finalCorners = finalCorners
             
     else:
         print("Could not detect 4 ArUco markers in the image.")
+        warped = generate_top_down_view(image, previousCorners, MAX_WIDTH, MAX_HEIGHT)
+        finalCorners = previousCorners
     
-    warped = generate_top_down_view(markersDetectedImage, finalCorners, MAX_WIDTH, MAX_HEIGHT)
+    
     
     # cv2.imshow('Top-Down View', warped)
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
 
-    return  warped
+    return  warped, finalCorners
 
 
 

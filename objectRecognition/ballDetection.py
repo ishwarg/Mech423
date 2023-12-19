@@ -103,7 +103,7 @@ def FindBalls(ctrs, img):
 #Output: contours
 def GenerateContours(img,backgroundThreshold):
     # apply blur
-    img_blur = cv2.GaussianBlur(img,(5,101),cv2.BORDER_DEFAULT) # blur applied
+    img_blur = cv2.GaussianBlur(img,(5,51),cv2.BORDER_DEFAULT) # blur applied
     # cv2.imshow("window", img_blur)
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
