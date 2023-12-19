@@ -1,15 +1,14 @@
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-import calibration as cc
+#import calibration as cc
 import os
+from objectRecognition.PoolTableConstants import *
 
 # Constants
-WHITE_THRESHOLD = 130    #Threshold for the whit part of the ball
-PERCENT_WHITE_THRESHOLD = 0.50   #Threshold for what percentage of the ball is white before it is considered a stiped ball
-MINIMUM_RADIUS = 25     #Minimum pool ball radius to expect in the image
-MAXIMUM_RADIUS = 80     #Max pool ball radius to expect in the image
-IMGSIZE = [1120, 2240]
+WHITE_THRESHOLD = 160    #Threshold for the whit part of the ball
+PERCENT_WHITE_THRESHOLD = 0.20   #Threshold for what percentage of the ball is white before it is considered a stiped ball
+PERCENT_WHITE_THRESHOLD_CUE = 0.5
 
 HUE_RANGES = [
     ("Red", (0, 15)),
@@ -19,11 +18,6 @@ HUE_RANGES = [
     ("Purple", (124, 135)),
     ("Red", (135, 180)),  # Handle wrap-around at the red boundary
 ]
-
-BACKGROUND_THRESHOLD = {
-    'UPPER': np.array([70, 255,240]),
-    'LOWER': np.array([45, 100,135])
-}
 '''
 COLOUR_THRESHOLDS = {
     'YELLOW_UPPER':[0, 100, 100],
@@ -49,7 +43,8 @@ COLOUR_THRESHOLDS = {
 
 def FindBalls(ctrs, img):
 
-    balls = {} # Dictionary for filtered contours
+    ballsSolid = [] # Dictionary for filtered contours
+    ballsStriped = []
     for i,c in enumerate(ctrs): # for all contours
         
         M = cv2.moments(c)
@@ -82,14 +77,13 @@ def FindBalls(ctrs, img):
         y = int(M["m01"] / M["m00"])
         stdRadius = np.std([((x-ix)**2 + (y-iy)**2)**0.5 for ix, iy in zip(lX, lY)])
 
-        if stdRadius < 3:
+        if stdRadius < 15:
            # Sort the ball
 
            #Get img of specific ball
            ballImg,ballMask = GenerateBallImg(c,img)
-           cv2.imshow('res',ballImg)
-           cv2.waitKey(0)
 
+           '''
            #Check Colour against thresholds
            ballImg = cv2.cvtColor(ballImg,cv2.COLOR_BGR2HSV)   #convert color for color identification
            ballImg_avgColor = cv2.mean(ballImg,ballMask)
@@ -98,30 +92,43 @@ def FindBalls(ctrs, img):
                balls[color_label+'Striped'] = (x, y)
                continue
            balls[color_label+'Solid'] = (x, y)
+           '''
 
+           if CheckStrips(ballImg = ballImg,ballMask=ballMask):
+               ballsStriped+=[np.array([x, y])]
+           else:
+               ballsSolid+=[np.array([x, y])]
            #if CheckStrips(ballImg):
            #Sort balls
 
 
-           #balls+=[(x, y)]
+           #balls+=[np.array([x, y])]
 
-    return balls
+    return ballsStriped, ballsSolid
 
 #Function to generate contours around all objects
 #Input: Transformed image
 #Output: contours
-def GenerateContours(img):
+#Function to generate contours around all objects
+#Input: Transformed image
+#Output: contours
+def GenerateContours(img,backgroundThreshold):
     # apply blur
-    img_blur = cv2.GaussianBlur(img,(5,5),cv2.BORDER_DEFAULT) # blur applied
+    img_copy = np.copy(img)
+    img_blur = cv2.GaussianBlur(img,(51,51),cv2.BORDER_DEFAULT) # blur applied
 
     # mask
     hsv = cv2.cvtColor(img_blur, cv2.COLOR_BGR2HSV) # convert to hsv
-    mask = cv2.inRange(hsv, BACKGROUND_THRESHOLD['LOWER'], BACKGROUND_THRESHOLD['UPPER']) # table's mask
+    if len(backgroundThreshold) == 4:
+        mask1 = cv2.inRange(hsv, backgroundThreshold['lower'], backgroundThreshold['lowerMiddle']) # table's mask
+        mask2 = cv2.inRange(hsv, backgroundThreshold['upperMiddle'], backgroundThreshold['upper']) # table's mask
+        mask = cv2.bitwise_or(mask1, mask2)
+    else:
+        mask = cv2.inRange(hsv, backgroundThreshold['lower'], backgroundThreshold['upper']) # table's mask
 
     # filter mask
     kernel = np.ones((5,5),np.uint8)
     mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel) # dilate->erode
-    
     
     # apply threshold
     ret,mask_inv = cv2.threshold(mask,5,255,cv2.THRESH_BINARY_INV) # apply threshold
@@ -148,8 +155,14 @@ def GenerateBallImg(c,img):
 #Input: Image of specfic ball
 #Output: True or false
 def CheckStrips(ballImg,ballMask):
+    #cv2.imshow('window',ballImg)
+    #cv2.waitKey(0)
     ballImg = cv2.cvtColor(ballImg,cv2.COLOR_BGR2GRAY)
-    ret,ballImg = cv2.threshold(ballImg,WHITE_THRESHOLD,255,cv2.THRESH_BINARY_INV)
+    #cv2.imshow('window',ballImg)
+    #cv2.waitKey(0)
+    ret,ballImg = cv2.threshold(ballImg,WHITE_THRESHOLD,255,cv2.THRESH_BINARY)
+    #cv2.imshow('window',ballImg)
+    #cv2.waitKey(0)
     averageWhite = cv2.mean(ballImg, ballMask)
 
     if  averageWhite[0] > int(PERCENT_WHITE_THRESHOLD*255):
@@ -157,20 +170,36 @@ def CheckStrips(ballImg,ballMask):
     else:
         return False
 
-def DrawBalls(balls,img):
-    for label,(x,y) in balls.items():
+def DrawBalls(ballsStriped,ballsSolid,img):
+    for i,(x,y) in enumerate(ballsStriped):
         cv2.putText(img,
-            f'{label} Ball', (x+50, y-25),
+            f'Striped Ball id: {i}', (x+50, y-25),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.5,
-            (0, 0, 255),
+            (255, 0, 0),
             1,
             cv2.LINE_AA)
         cv2.putText(img,
             f'({x}, {y})', (x+50, y),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.5,
-            (0, 0, 255),
+            (255, 0, 0),
+            1,
+            cv2.LINE_AA)
+    
+    for i,(x,y) in enumerate(ballsSolid):
+        cv2.putText(img,
+            f'Solid Ball id: {i}', (x+50, y-25),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (255, 0, 0),
+            1,
+            cv2.LINE_AA)
+        cv2.putText(img,
+            f'({x}, {y})', (x+50, y),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (255, 0, 0),
             1,
             cv2.LINE_AA)
 
