@@ -13,11 +13,6 @@ HUE_RANGES = [
     ("Purple", (105, 135)),
     ("Red", (135, 180)),  # Handle wrap-around at the red boundary
 ]
-
-BACKGROUND_THRESHOLD = {
-    'UPPER': np.array([70, 255,240]),
-    'LOWER': np.array([45, 100,135])
-}
 '''
 COLOUR_THRESHOLDS = {
     'YELLOW_UPPER':[0, 100, 100],
@@ -76,21 +71,21 @@ def FindBalls(ctrs, img):
         y = int(M["m01"] / M["m00"])
         stdRadius = np.std([((x-ix)**2 + (y-iy)**2)**0.5 for ix, iy in zip(lX, lY)])
 
-        if stdRadius < 10:
+        if stdRadius < 15:
            # Sort the ball
 
            #Get img of specific ball
            ballImg = GenerateBallImg(c,img)
            #Debug
-           #cv2.imshow('res',ballImg)
-           #cv2.waitKey(0)
+           cv2.imshow('res',ballImg)
+           cv2.waitKey(0)
 
            #Check Colour against thresholds
            ballImg = cv2.cvtColor(ballImg,cv2.COLOR_BGR2HSV)   #convert color for color identification
            #color_label = classify_hue(ballImg_avgColor[0],HUE_RANGES)
            #balls[color_label] = [(x, y)]
 
-           #if CheckStrips(ballImg):
+           CheckStrips(ballImg)
            #Sort balls
 
 
@@ -103,7 +98,8 @@ def FindBalls(ctrs, img):
 #Output: contours
 def GenerateContours(img,backgroundThreshold):
     # apply blur
-    img_blur = cv2.GaussianBlur(img,(5,5),cv2.BORDER_DEFAULT) # blur applied
+    img_copy = np.copy(img)
+    img_blur = cv2.GaussianBlur(img,(51,51),cv2.BORDER_DEFAULT) # blur applied
 
     # mask
     hsv = cv2.cvtColor(img_blur, cv2.COLOR_BGR2HSV) # convert to hsv
@@ -117,7 +113,6 @@ def GenerateContours(img,backgroundThreshold):
     # filter mask
     kernel = np.ones((5,5),np.uint8)
     mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel) # dilate->erode
-    
     
     # apply threshold
     ret,mask_inv = cv2.threshold(mask,5,255,cv2.THRESH_BINARY_INV) # apply threshold
@@ -146,7 +141,12 @@ def GenerateBallImg(c,img):
 #Output: True or false
 def CheckStrips(ballImg):
     ballImg = cv2.cvtColor(ballImg,cv2.COLOR_BGR2GRAY)
+    cv2.imshow('window',ballImg)
+    cv2.waitKey(0)
     ret,ballImg = cv2.threshold(ballImg,WHITE_THRESHOLD,255,cv2.THRESH_BINARY)
+
+    cv2.imshow('window',ballImg)
+    cv2.waitKey(0)
 
     if np.mean(ballImg) > int(PERCENT_WHITE_THRESHOLD*255):
         return True
@@ -189,18 +189,16 @@ def GenerateBackgroundThresholds(img,num_samples):
 
     # Find the maximum and minimum color values
     backgroundThreshold = {}
-    backgroundThreshold['upper'] = np.amax(sampled_pixels, axis=0)+10
+    backgroundThreshold['upper'] = np.array([np.max(sampled_pixels[:,0])+10,200,255])
     if backgroundThreshold['upper'][0] > 180:
         backgroundThreshold['upper'][0] = backgroundThreshold['upper'][0] - 180
-        backgroundThreshold['upperMiddle'] = np.amin(sampled_pixels, axis=0)-10
-        backgroundThreshold['upperMiddle'][0] =0
-        backgroundThreshold['lowerMiddle'] = np.amax(sampled_pixels, axis=0)+10
-        backgroundThreshold['lowerMiddle'][0] = 180
-    backgroundThreshold['lower'] = np.amin(sampled_pixels, axis=0)-10
+        backgroundThreshold['upperMiddle'] = np.array([0,100,150])
+        backgroundThreshold['lowerMiddle'] =  np.array([180,200,255])
+    backgroundThreshold['lower'] = np.array([np.min(sampled_pixels[:,0])-10,200,255])
 
     return backgroundThreshold
 
-'''
+
 if __name__ == "__main__":
 
     #Load pool table & pool balls
@@ -222,4 +220,4 @@ if __name__ == "__main__":
     DrawBalls(balls,img)  
     cv2.imshow('res',img)
     cv2.waitKey(0)
-'''
+
