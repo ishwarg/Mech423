@@ -46,8 +46,6 @@ class MyGUI:
         self.shotTaken = True
         self.BallsIdentified = False
         self.balls = []
-        self.trajectoryDrawn = False
-        self.cueBallTraj = []
        # Create text boxes
         self.textbox1_label = tk.Label(master, text="Object Ball ID:")
         self.textbox1_label.grid(row=0, column=0, padx=5, pady=5)
@@ -75,10 +73,8 @@ class MyGUI:
         self.submit_button.grid(row=3, column=0, columnspan=2, pady=10)
 
         self.backgroundColour_button = tk.Button(master, text="Done Shot", command=self.doneShot)
-        self.backgroundColour_button.grid(row=3, column=1, columnspan=2, pady=10)
+        self.backgroundColour_button.grid(row=3, column=2, columnspan=2, pady=10)
 
-        self.Ready = tk.Button(master, text="Ready", command=self.ready)
-        self.Ready.grid(row=3, column=2, columnspan=2, pady=10)
 
         # Image display area
         self.image_label = tk.Label(master)
@@ -109,10 +105,6 @@ class MyGUI:
         self.shotTaken = False
         self.BallsIdentified = True
 
-    def ready(self):
-        self.trajectoryDrawn = True
-
-
     def update(self):
         # Read a frame from the video capture
         ret, frame = self.cap.read()
@@ -132,28 +124,28 @@ class MyGUI:
                 
                 balls = self.balls
 
-                if not self.Ready:
+                if not self.shotTaken:
                     objectBallTraj = pm.ObjectBallTraj(balls,self.objectBall,self.pocket)
                     cueBallTraj = pm.CueBallTraj(balls,self.objectBall,self.cueBall,objectBallTraj[0])
                     pm.DrawTraj(warped,balls[self.objectBall],objectBallTraj) 
                     pm.DrawTraj(warped,balls[self.cueBall],cueBallTraj)  
                     
-                    self.cueBallTraj = cueBallTraj[0]
-
                     
-                if not self.shotTaken:
+
                     self.cueVector, cueCorners, found =ca.determineAngle(warped, self.cueVector)
+
                     if found:
+
                         
-                        # print(self.cueVector)
                         # print(cueCorners[0][0][0])
                         ca.DrawInfiniteLine(warped, cueCorners[0][0][0], self.cueVector)
-         
+
+                       
                         rounded_array = np.round(self.cueVector, decimals=2)
                         array_string = np.array2string(rounded_array, precision=2, suppress_small=True)
                         self.textbox4.config(text=array_string)
-                        magnitude = np.linalg.norm(self.cueBallTraj)
-                        unit_traj = self.cueBallTraj/magnitude
+                        magnitude = np.linalg.norm(cueBallTraj)
+                        unit_traj = cueBallTraj/magnitude
                         
                         dot_product = np.dot(self.cueVector, unit_traj[0])
                         
