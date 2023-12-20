@@ -135,12 +135,16 @@ class MyGUI:
                 if self.TrajectoryGeneration:
                     objectBallTraj = pm.ObjectBallTraj(balls,self.objectBall,self.pocket)
                     cueBallTraj = pm.CueBallTraj(balls,self.objectBall,self.cueBall,objectBallTraj[0])
+
                     pm.DrawTraj(warped,balls[self.objectBall],objectBallTraj) 
                     pm.DrawTraj(warped,balls[self.cueBall],cueBallTraj) 
 
                 if self.CueTracking:   
 
                     self.cueVector, cueCorners, found =ca.determineAngle(warped, self.cueVector)
+
+                    pm.DrawTraj(warped,balls[self.objectBall],objectBallTraj) 
+                    pm.DrawTraj(warped,balls[self.cueBall],cueBallTraj)
 
                     if found:
 
@@ -159,7 +163,6 @@ class MyGUI:
                             self.DetermineUnitTraj = False
                         
                         dot_product = np.dot(self.cueVector, unit_traj[0])
-                        
 
                         # Calculate the allowable range based on the tolerance percentage
                         
