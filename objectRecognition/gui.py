@@ -21,10 +21,10 @@ import shotSelection.physicsModel as pm
 
 
 BACKGROUND_THRESHOLDS = {
-    'upper': np.array([180,240,250]),
-    'upperMiddle':np.array([176,190,181]),
-    'lowerMiddle': np.array([5,240,255]),
-    'lower':np.array([0,190,181])
+    'upper': np.array([180,230,255]),
+    'upperMiddle':np.array([175,180,180]),
+    'lowerMiddle': np.array([5,230,255]),
+    'lower':np.array([0,180,180])
 }
 
 
@@ -44,7 +44,10 @@ class MyGUI:
 		[MAX_WIDTH-XOFFSET, MAX_HEIGHT],
 		[XOFFSET, MAX_HEIGHT]], dtype = "int32")
         self.shotTaken = True
-        
+        self.BallsIdentified = False
+        self.balls = []
+        self.trajectoryDrawn = False
+        self.cueBallTraj = []
        # Create text boxes
         self.textbox1_label = tk.Label(master, text="Object Ball ID:")
         self.textbox1_label.grid(row=0, column=0, padx=5, pady=5)
@@ -71,9 +74,11 @@ class MyGUI:
         self.submit_button = tk.Button(master, text="Submit", command=self.submit_values)
         self.submit_button.grid(row=3, column=0, columnspan=2, pady=10)
 
-        self.backgroundColour_button = tk.Button(master, text="Done Shot", command=self.getBackgroundColour)
-        self.backgroundColour_button.grid(row=3, column=2, columnspan=2, pady=10)
+        self.backgroundColour_button = tk.Button(master, text="Done Shot", command=self.doneShot)
+        self.backgroundColour_button.grid(row=3, column=1, columnspan=2, pady=10)
 
+        self.Ready = tk.Button(master, text="Ready", command=self.ready)
+        self.Ready.grid(row=3, column=2, columnspan=2, pady=10)
 
         # Image display area
         self.image_label = tk.Label(master)
@@ -85,10 +90,11 @@ class MyGUI:
         # Call the update method after 100 milliseconds
         self.update()
 
-    def getBackgroundColour(self):
+    def doneShot(self):
         self.shotTaken = True
+        self.BallsIdentified = False
         
-
+    
 
     def submit_values(self):
         # Retrieve values from text boxes and store them in variables
@@ -101,6 +107,11 @@ class MyGUI:
         print("Cue Ball ID:", self.cueBall)
         print("Pocket ID:", self.pocket)
         self.shotTaken = False
+        self.BallsIdentified = True
+
+    def ready(self):
+        self.trajectoryDrawn = True
+
 
     def update(self):
         # Read a frame from the video capture
@@ -113,41 +124,52 @@ class MyGUI:
             try:
                 warped, self.previousCorners = cc.tableDetection(frame, camera_matrix, dist_coeffs, self.previousCorners)
                 
-                balls = bd.FindandDrawBalls(warped, BACKGROUND_THRESHOLDS)
-                if not self.shotTaken:
-                    collisionObject,objectBallTraj = pm.ObjectBallTraj(balls,self.objectBall,self.pocket)
-                    collisionCue,cueBallTraj = pm.CueBallTraj(balls,self.objectBall,self.cueBall,objectBallTraj)
+                if not self.BallsIdentified:
+                    self.balls = bd.FindandDrawBalls(warped, BACKGROUND_THRESHOLDS)
+                    
+                else:
+                    bd.DrawBalls(self.balls, warped)
+                
+                balls = self.balls
+
+                if not self.Ready:
+                    objectBallTraj = pm.ObjectBallTraj(balls,self.objectBall,self.pocket)
+                    cueBallTraj = pm.CueBallTraj(balls,self.objectBall,self.cueBall,objectBallTraj[0])
                     pm.DrawTraj(warped,balls[self.objectBall],objectBallTraj) 
                     pm.DrawTraj(warped,balls[self.cueBall],cueBallTraj)  
                     
-                    if collisionObject:
-                        print("Object ball has a collision")
-                    if collisionCue:
-                        print("Cue ball has a collision")
+                    self.cueBallTraj = cueBallTraj[0]
 
-                    self.cueVector =ca.determineAngle(warped, self.cueVector)
-                    print(self.cueVector)
-                    #cv2.line(warped, np.array(self.previousCorners[0], dtype = "int32"), np.array(self.previousCorners[0], dtype = "int32") + np.array(100*self.cueVector, dtype = "int32"),(0,255,0),2)
                     
-                    rounded_array = np.round(self.cueVector, decimals=2)
-                    array_string = np.array2string(rounded_array, precision=2, suppress_small=True)
-                    self.textbox4.config(text=array_string)
-                    magnitude = np.linalg.norm(cueBallTraj)
-                    unit_traj = cueBallTraj/magnitude
-                    dot_product = np.dot(self.cueVector, unit_traj)
-                    print(dot_product)
+                if not self.shotTaken:
+                    self.cueVector, cueCorners, found =ca.determineAngle(warped, self.cueVector)
+                    if found:
+                        
+                        # print(self.cueVector)
+                        # print(cueCorners[0][0][0])
+                        ca.DrawInfiniteLine(warped, cueCorners[0][0][0], self.cueVector)
+         
+                        rounded_array = np.round(self.cueVector, decimals=2)
+                        array_string = np.array2string(rounded_array, precision=2, suppress_small=True)
+                        self.textbox4.config(text=array_string)
+                        magnitude = np.linalg.norm(self.cueBallTraj)
+                        unit_traj = self.cueBallTraj/magnitude
+                        
+                        dot_product = np.dot(self.cueVector, unit_traj[0])
+                        
 
-                    # Calculate the allowable range based on the tolerance percentage
-                    
+                        # Calculate the allowable range based on the tolerance percentage
+                        
 
-                    # Check if the dot product is within the allowable range
-                    angleCheck = abs(dot_product - 1)<=0.01
-                    
-                    
-                    if angleCheck:
-                        print("Hurray!")
-                        ding_sound = Sine(1000).to_audio_segment(duration=100).fade_in(5).fade_out(5)
-                        play(ding_sound)
+                        # Check if the dot product is within the allowable range
+                        angleCheck = abs(dot_product - 1)<=0.005
+                        
+                        if angleCheck:
+                            print("Hurray!")
+                            ding_sound = Sine(1000).to_audio_segment(duration=100).fade_in(5).fade_out(5)
+                            play(ding_sound)
+                    else: 
+                        print("Cue not found!!")
                   
                 rgb_frame = cv2.cvtColor(warped, cv2.COLOR_BGR2RGB)
                 rgb_frame = cv2.resize(rgb_frame, (1000, 500))  
@@ -173,7 +195,7 @@ if __name__ == "__main__":
     data = np.load(file_path)
     camera_matrix = data['camera_matrix']
     dist_coeffs = data['dist_coeffs']
-    
+
     
 
 
